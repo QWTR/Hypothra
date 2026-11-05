@@ -7,22 +7,29 @@ const extraStyle = `
 export function dashboardHtml(token: string): string {
   return `<!doctype html><html lang="en"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Hypothra · Plan your launch</title><style>${style}\n${extraStyle}\n.budget-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.budget-strip>div{min-width:0}.budget-strip strong{overflow-wrap:anywhere}</style></head>
+  <title>Hypothra · Plan your launch</title><style>${style}\n${extraStyle}\n#folder-current{overflow-wrap:anywhere;min-width:0;max-width:100%}.budget-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.budget-strip>div,.result-grid .card{min-width:0}.budget-strip strong,.result-grid .number{overflow-wrap:anywhere}.result-grid{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:700px){.result-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head>
   <body><main>
     <header><div class="topbar"><div class="brand"><i></i>Hypothra</div><span class="local">Local workspace</span></div>
       <div class="eyebrow">Your product, one step at a time</div><h1>A clearer path to your next launch.</h1>
       <p class="lead">Tell us what you are building, plan your promotion, and check the experience before people arrive.</p>
     </header>
-    <nav class="steps" aria-label="Launch setup">
-      <button class="step" data-step="0" aria-current="step"><b>1</b><span>Your product<small>Check our understanding</small></span></button>
+    <section class="panel" aria-label="Project selection">
+      <h2>Choose your project folder</h2><p>Hypothra can stay installed anywhere. Select the application or website you want AI to understand.</p>
+      <form id="folder-form"><label class="field">Project folder<input id="project-folder" aria-label="Project folder" required placeholder="D:\\MyProjects\\MyApp" autocomplete="off"><small>Analysis is saved with this project, so you can return to it later.</small></label>
+        <div class="toolbar" style="margin-top:12px"><button id="browse-project" type="button">Browse folders…</button><button class="primary" id="open-project" type="submit">Open & analyze project</button><span class="help" id="folder-current"></span></div>
+      </form>
+    </section>
+    <nav class="steps" aria-label="Launch setup" hidden>
+      <button class="step" data-step="0" aria-current="step"><b>1</b><span>Your product<small>Review the AI summary</small></span></button>
       <button class="step" data-step="1"><b>2</b><span>Launch plan<small>Budget, audience & ads</small></span></button>
       <button class="step" data-step="2"><b>3</b><span>App checks<small>Try the user experience</small></span></button>
       <button class="step" data-step="3"><b>4</b><span>Your results<small>See what needs attention</small></span></button>
     </nav>
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
-    <section class="panel" data-panel="0">
-      <div class="panel-head"><div><div class="eyebrow">Step 1 of 4</div><h2>Does this describe your product?</h2><p>We started with your project files. Correct anything we misunderstood.</p></div><span class="pill" id="state">Loading…</span></div>
+    <section class="panel" data-panel="0" hidden>
+      <div class="panel-head"><div><div class="eyebrow">Step 1 of 4</div><h2>AI gets to know your product.</h2><p>Your code becomes a ready-to-review summary. Change anything the AI misunderstood.</p></div><span class="pill" id="state">Loading…</span></div>
+      <div class="notice" id="ai-progress" role="status"><strong id="ai-heading">Preparing your project summary</strong><p id="ai-message">AI will fill in the details automatically.</p><button id="analyze-ai" type="button">Analyze with AI</button></div>
       <div id="stack" class="chips"></div>
       <form id="product-form"><div class="form-grid">
         <label class="field">Product name<input id="product-name" required maxlength="180" autocomplete="off"></label>
@@ -33,6 +40,8 @@ export function dashboardHtml(token: string): string {
       </div>
       <details><summary>Correct the technology stack</summary><div id="technology-fields"></div><button type="button" class="muted-button" id="add-technology">+ Add technology</button></details>
       <details><summary>Review the features we found <span id="feature-count"></span></summary><p class="help">A feature found in code still needs a real app check. You can correct its name and description.</p><div id="feature-fields"></div><button type="button" class="muted-button" id="add-feature">+ Add a feature</button></details>
+      <details><summary>Edit the user journeys AI understood</summary><div id="product-journeys"></div><button type="button" class="muted-button" id="add-product-journey">+ Add a user journey</button></details>
+      <details><summary>Correct the remaining questions</summary><label class="field">Questions or unknowns<textarea id="unknown-notes" placeholder="One question per line. Remove questions you have already answered."></textarea></label></details>
       <details><summary>Questions to check and source references</summary><ul id="unknowns"></ul><p class="help" id="scan"></p><pre id="evidence"></pre></details>
       <div class="actions"><button type="submit" id="save-product">Save changes</button><div class="right"><span class="step-note" id="approval-note"></span><button type="button" class="primary" id="approve">Looks right — continue</button></div></div>
       </form>
@@ -69,7 +78,7 @@ export function dashboardHtml(token: string): string {
       <p class="help">Expected counts can be fractional. This is a scenario based on your assumptions, not a prediction of real customers.</p>
     </section>
 
-    <details class="advanced"><summary>Advanced: inspect or edit JSON</summary><p class="help">Normal setup uses the forms above. These editors expose the complete saved configuration.</p>
+    <details class="advanced" hidden><summary>Advanced: inspect or edit JSON</summary><p class="help">Normal setup uses the forms above. These editors expose the complete saved configuration.</p>
       <details><summary>Application model</summary><textarea class="json" id="project" aria-label="Application model JSON" spellcheck="false"></textarea><button id="save-project">Save model JSON</button></details>
       <details><summary>Launch plan</summary><textarea class="json" id="launch" aria-label="Launch plan JSON" spellcheck="false"></textarea><button data-save="launch">Save launch JSON</button></details>
       <details><summary>Ad cost evidence</summary><textarea class="json" id="benchmarks" aria-label="Benchmark JSON" spellcheck="false"></textarea><button data-save="benchmarks">Save evidence JSON</button></details>

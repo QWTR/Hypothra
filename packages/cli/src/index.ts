@@ -5,12 +5,13 @@ import { exampleScenario, simulateGrowth } from "@hypothra/simulation-core";
 import { inspectProject, scanProject } from "@hypothra/project-scanner";
 import { approveProject, benchmarksSchema, enrichUnderstanding, fetchAccountCosts, importCostCsv, initializeProject,
   projectStatus, readJson, refreshProject, reviewProject, runLaunch, runProjectJourneys, saveExperimentFile,
-  saveProjectDraft, startDashboard, workspace, inspectTestPage, readProjectContext, suggestJourneys, withLock, writeArtifact, findPublicPrices } from "@hypothra/product-lab";
+  saveProjectDraft, startDashboard, workspace, inspectTestPage, readProjectContext, suggestJourneys, withLock, writeArtifact, findPublicPrices, fillProjectWithAI, disableAutomaticAnalysis } from "@hypothra/product-lab";
 
 const help = `Hypothra 0.2.0 — understand your product and test a launch
 
 Usage:
-  hypothra init [directory] --description "What the product does"
+  hypothra init [directory]              AI prepares the product details automatically
+    [--description "Optional context"] [--no-ai]
   hypothra analyze [directory]           Inspect allowlisted project files without executing them
   hypothra analyze [directory] --manifest  Legacy package.json (scanner scaffold)
   hypothra review [directory]            Show understanding, evidence, unknowns, and revision
@@ -51,7 +52,7 @@ function flags(args: string[], names: string[], booleans: string[] = []) {
     } else if (!directory) directory = arg;
     else throw new Error("Only one project directory may be supplied.");
   }
-  return { directory: directory ?? ".", values, required: (key: string) => { const value = values.get(key); if (!value) throw new Error(`Missing --${key}`); return value; } };
+  return { directory: directory ?? ".", hasDirectory: directory !== undefined, values, required: (key: string) => { const value = values.get(key); if (!value) throw new Error(`Missing --${key}`); return value; } };
 }
 
 async function readCsv(path: string) {
@@ -76,8 +77,15 @@ async function main(args: string[]) {
     throw new Error("Use simulate or simulate --config <file>.");
   }
   if (command === "init") {
-    const options = flags(rest, ["description"]);
+    const options = flags(rest, ["description", "env-file"], ["no-ai"]);
+    if (options.values.has("env-file")) process.loadEnvFile(options.required("env-file"));
     const result = await initializeProject(options.directory, options.values.get("description"));
+    if (!options.values.has("no-ai")) {
+      console.error("Hypothra is preparing your project details with AI. It uses selected, redacted source excerpts and your configured engine or signed-in Codex account.");
+      const ai = await fillProjectWithAI(options.directory);
+      const reviewed = await reviewProject(options.directory);
+      Object.assign(result, { ...reviewed, ai });
+    } else await disableAutomaticAnalysis(options.directory);
     await writeFile(join(options.directory, "hypothra.scenario.json"), JSON.stringify(exampleScenario, null, 2) + "\n", { flag: "wx" }).catch((error: NodeJS.ErrnoException) => { if (error.code !== "EEXIST") throw error; });
     return json(result);
   }
@@ -101,7 +109,7 @@ async function main(args: string[]) {
   }
   if (command === "dashboard") {
     const options = flags(rest, ["port"]);
-    const dashboard = await startDashboard(options.directory, options.values.has("port") ? Number(options.required("port")) : 4317);
+    const dashboard = await startDashboard(options.hasDirectory ? options.directory : undefined, options.values.has("port") ? Number(options.required("port")) : 4317);
     console.log(`Hypothra local dashboard: ${dashboard.url}`); return;
   }
   if (command === "enrich") {

@@ -23,6 +23,7 @@ export interface Inspection {
   evidence: Evidence[];
   technologies: { name: string; category: string; evidenceIds: string[] }[];
   warnings: string[];
+  context?: { path: string; text: string; truncated: boolean }[];
 }
 const excluded = new Set([".git", ".hypothra", "node_modules", "dist", "build", "coverage", ".next", ".expo", ".venv", "venv", "vendor", "__pycache__", "outputs", "android", "ios"]);
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".prisma", ".sql", ".html", ".css"]);
@@ -47,7 +48,7 @@ const safeName = (name: string): boolean => !name.startsWith(".") && !/(?:secret
   && !/\.(?:pem|key|p12|pfx|crt|log|map|lock|sqlite|db)$/i.test(name);
 
 /** Reads bounded, allowlisted text files; never follows links or executes target code. */
-export async function inspectProject(directory: string): Promise<Inspection> {
+export async function inspectProject(directory: string, options: { includeContext?: boolean } = {}): Promise<Inspection> {
   const root = await realpath(directory);
   if (!(await lstat(root)).isDirectory()) throw new Error("Project root must be a directory.");
   const maxFiles = 1500, maxBytes = 8 * 1024 * 1024, maxFileBytes = 128 * 1024, maxEntries = 12_000;
@@ -217,6 +218,19 @@ export async function inspectProject(directory: string): Promise<Inspection> {
   }
   if (truncated) warnings.add("Analysis is incomplete because a scan budget was reached. Review excluded and oversized files manually.");
   warnings.add("Source declarations are evidence of code structure, not proof that a feature works or is deployed.");
+  let context: Inspection["context"];
+  if (options.includeContext) {
+    let remaining = 90_000;
+    const priority = (path: string) => /readme/i.test(path) ? 0 : /(?:schema|screen|page|route|controller|service|server|app\.)/i.test(path) ? 1 : /package\.json$/.test(path) ? 2 : 3;
+    context = [];
+    for (const file of [...files].sort((a, b) => priority(a.path) - priority(b.path) || a.path.localeCompare(b.path, "en"))) {
+      if (context.length >= 28 || remaining <= 0) break;
+      if (/(?:^|\/)(?:tests?|__tests__|scripts)\/|\.(?:test|spec)\./i.test(file.path)) continue;
+      const snippet = redact(file.text.slice(0, Math.min(6500, remaining)));
+      remaining -= snippet.length;
+      context.push({ path: file.path, text: snippet, truncated: snippet.length < file.text.length });
+    }
+  }
   return { schemaVersion: 1, engine: "structural-v1", sourceDigest: digest.digest("hex"), filesScanned: files.length,
-    bytesScanned, truncated, evidence, technologies: [...tech.values()].sort((a, b) => a.name.localeCompare(b.name)), warnings: [...warnings] };
+    bytesScanned, truncated, evidence, technologies: [...tech.values()].sort((a, b) => a.name.localeCompare(b.name)), warnings: [...warnings], ...(context ? { context } : {}) };
 }

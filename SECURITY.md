@@ -20,6 +20,11 @@ being concurrently modified by an adversary. These checks are not an OS sandbox.
 `.hypothra/` contains project descriptions, source references, private reports,
 optional DOM inventories, and optional screenshots. Ignore it in the inspected
 project's Git configuration. Review any report before sharing it.
+New workspaces create a private local ignore file automatically. Selecting a
+project requires an explicit authenticated action in the panel; the chosen path
+must resolve to a specific absolute directory. The native Windows picker runs
+only on request, with paths passed as data rather than interpolated shell text.
+UI writes include the selected project identity to reject stale cross-project edits.
 
 ## Approval and output
 
@@ -58,7 +63,20 @@ Global samples stay global and currency conversion preserves original values.
 The dashboard can run the saved local browser checks only through an explicit
 authenticated POST action; the same approved-model and local-origin rules apply.
 
-Scanning, review, and deterministic calculations require no external model.
+The standalone scanner, review, deterministic calculations, and `init --no-ai`
+require no external model. Normal `init` and a first dashboard visit automatically
+use a signed-in Codex CLI or a configured compatible model to prepare product data.
+They send selected, bounded, redacted source excerpts and evidence to that account's
+model. Source redaction is best-effort; use structural-only mode for sensitive
+projects you do not want processed by a model. No Meta/TikTok credentials are needed.
+
+The Codex adapter ignores user configuration and rules for its run, disables model
+tools/apps/hooks/memory, uses read-only execution permissions, and operates in a
+disposable directory. It does not give the model unrestricted project access.
+Temporary files are removed and account secrets are never copied into the project.
+AI only proposes understanding; human approval remains necessary. Newer saved
+owner edits defeat stale AI results, and the previous model is backed up.
+
 An explicit `enrich` or `plan-journeys` command with `--allow-upload` sends bounded,
 redacted summaries or DOM inventory to your configured endpoint. Remote endpoints
 must use HTTPS. Model output is schema/evidence checked and remains a draft.

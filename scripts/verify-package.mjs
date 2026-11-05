@@ -19,7 +19,7 @@ try {
   invoke(npmCli, ["install", "--save-dev", "--ignore-scripts", "--no-audit", "--no-fund", join(repo, "work", "releases", "hypothra-0.2.0.tgz")]);
   const entry = join(root, "node_modules", "hypothra", "dist", "cli.mjs");
   assert.equal(invoke(entry, ["--version"]).trim(), "0.2.0");
-  const init = JSON.parse(invoke(entry, ["init", ".", "--description", "Independent consumer fixture"]));
+  const init = JSON.parse(invoke(entry, ["init", ".", "--no-ai", "--description", "Independent consumer fixture"]));
   invoke(entry, ["approve", ".", "--revision", init.revision]);
   const launched = JSON.parse(invoke(entry, ["launch", "."]));
   assert.equal(launched.report.totals[1].clicks, 1000);

@@ -39,6 +39,12 @@ export async function workspace(directory: string, create = false): Promise<stri
   if (create) await mkdir(path, { recursive: true });
   const info = await lstat(path);
   if (info.isSymbolicLink() || !info.isDirectory() || await realpath(path) !== path) throw new Error(".hypothra must be a real directory inside the project.");
+  if (create) {
+    try {
+      const ignored = await open(join(path, ".gitignore"), "wx");
+      try { await ignored.writeFile("# Private Hypothra analysis and reports\n*\n"); } finally { await ignored.close(); }
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error; }
+  }
   return path;
 }
 

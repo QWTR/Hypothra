@@ -3,7 +3,8 @@ import { lstat, open } from "node:fs/promises";
 import { z } from "zod";
 import { inspectProject } from "@hypothra/project-scanner";
 import type { Inspection } from "@hypothra/project-scanner";
-import { projectModelSchema, launchPlanSchema, benchmarksSchema, journeysSchema, digestSchema, runtimeReportSchema } from "./schema.js";
+import { projectModelSchema, launchPlanSchema, benchmarksSchema, journeysSchema, digestSchema, runtimeReportSchema, aiJobSchema } from "./schema.js";
+import type { AIJob } from "./schema.js";
 import { proposeUnderstanding, summarizeUnderstanding, validateUnderstanding } from "./understanding.js";
 import { defaultLaunch, exampleBenchmarks, simulateLaunch } from "./launch.js";
 import type { RuntimeReport, LaunchReport } from "./launch.js";
@@ -61,11 +62,12 @@ export async function reviewProject(directory: string) {
   });
 }
 
-export async function saveProjectDraft(directory: string, input: unknown, expectedRevision: string) {
+export async function saveProjectDraft(directory: string, input: unknown, expectedRevision: string, options: { backup?: boolean } = {}) {
   return withLock(directory, async () => {
     const draft = await loadDraft(directory);
     if (draft.hash !== expectedRevision) throw new Error("Draft changed since it was opened. Reload before saving.");
     const model = validateUnderstanding(input, draft.inspection);
+    if (options.backup) await writeArtifact(draft.path, "project.before-ai.json", draft.model);
     await writeArtifact(draft.path, "project.json", model);
     return { status: "review-required", revision: revision(model), model };
   });
@@ -171,7 +173,9 @@ export async function projectStatus(directory: string) {
     reportCurrent = report!.inputsRevision === revision({ modelRevision: review.revision, plan, benchmarks, runtime: attached })
       && (!report!.runtimeAttached || runtimeCurrent);
   }
-  return { ...review, plan, benchmarks, journeys, report, reportCurrent, runtime, runtimeCurrent };
+  let ai: AIJob = { id: "not-started", status: "idle", message: "AI will prepare your project details automatically." };
+  if (await exists(join(path, "ai-status.json"))) ai = await readJson(join(path, "ai-status.json"), aiJobSchema);
+  return { ...review, plan, benchmarks, journeys, report, reportCurrent, runtime, runtimeCurrent, ai };
 }
 
 export async function saveExperimentFile(directory: string, kind: "launch" | "benchmarks" | "journeys", value: unknown) {

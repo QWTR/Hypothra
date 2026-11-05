@@ -26,7 +26,9 @@ simulation-core ────────────────► CLI / MCP se
 - `journeys.ts`: explicit local browser actions, assertions, and recorded observations.
 - `discovery.ts`: rendered control inventory for planning; no captured input values.
 - `ai.ts`: opt-in compatible model endpoint; validated model and journey proposals.
+- `auto-ai.ts` / `codex-ai.ts`: automatic initialization, background progress, configured-engine detection, structured Codex inference, owner-edit protection, and backups.
 - `dashboard.ts`: authenticated loopback endpoints, including explicit local checks and public cost lookup.
+- `folder-picker.ts`: user-triggered Windows folder selection; Hypothra can run separately from every inspected project.
 - `dashboard-view.ts` / `dashboard-client.ts`: guided forms, draft preservation, and plain-language results.
 - `report.ts`: shared styling and escaped standalone report rendering.
 - `storage.ts`: bounded reads, local operation lock, atomic artifact writes, canonical hashing.
@@ -61,8 +63,9 @@ record the journey configuration revision. A modified test plan needs a new run.
 
 ## AI is an interpreter, not the arithmetic engine
 
-Structural analysis works without a model. It observes declarations and lists
-unknowns; it cannot prove arbitrary business behavior. A model can reinterpret
+Structural analysis works without a model. Automatic initialization uses its
+evidence plus bounded source excerpts to fill the product model. It observes
+declarations and lists unknowns; it cannot prove arbitrary business behavior. A model can reinterpret
 the evidence and propose product language and synthetic personas. Generated
 descriptions are labeled hypotheses. Unknown evidence IDs, selectors, paths,
 and incompatible JSON are rejected. Human review remains necessary.
@@ -70,6 +73,13 @@ and incompatible JSON are rejected. Human review remains necessary.
 The MCP host can provide that interpretation using the owner's existing model.
 Alternatively the CLI can call a configured compatible chat-completions endpoint.
 No model, provider account, or token is installed automatically.
+The automatic path detects existing Codex authentication, or an explicitly
+configured compatible endpoint. Codex executes with user config/rules ignored,
+read-only permissions and model tools disabled, in a disposable directory that
+contains only the output schema. Source context is supplied on stdin. Generated
+output is schema/evidence checked before saving, never auto-approved, and an older
+in-flight result cannot overwrite newer owner edits. Untouched example ad templates
+are updated to reference the new model; custom budgets and ad copy are preserved.
 
 ## MCP capabilities
 

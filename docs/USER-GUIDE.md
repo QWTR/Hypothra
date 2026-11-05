@@ -15,7 +15,21 @@ Open `http://127.0.0.1:4317`. The example creates an isolated synthetic project,
 an editable understanding, a launch plan, browser results, and an interactive
 report. The deliberately broken mobile signup is expected to fail.
 
-## 2. Add Hypothra to a test copy of your project
+## 2. Choose your project — Hypothra stays separate
+
+Run `npm start` from the Hypothra checkout, then open its local panel. Click
+**Browse folders…** to choose an application or website, or paste its full path
+and click **Open & analyze project**. Hypothra can stay in `D:\Hypothra` while
+your app lives anywhere else. You do not need to move it or install Hypothra
+as one of its dependencies.
+
+The selected project gets a private `.hypothra/` analysis folder with its own
+ignore file. AI fills the product description and fields automatically. Switching
+folders reopens each project's own saved understanding, settings, and reports.
+Save current edits before switching. The Windows native chooser opens only after
+you click **Browse folders…**; pasting an absolute path also works.
+
+### Optional project-local CLI installation
 
 First create the standalone archive:
 
@@ -24,26 +38,45 @@ cd D:\Hypothra
 npm.cmd run package
 cd D:\MyTestProject
 npm.cmd install --save-dev D:\Hypothra\work\releases\hypothra-0.2.0.tgz --ignore-scripts
-npm.cmd exec --offline -- hypothra init . --description "Explain the product, target users, and business idea"
+npm.cmd exec --offline -- hypothra init .
 ```
 
-Add `.hypothra/` to the test project's `.gitignore` **before** initialization, or
-run `hypothra refresh` after changing that ignore file. Ignore rules form part of
-the source digest. Initialization does not rewrite your source files or install
-the inspected project's dependencies.
+Hypothra creates an ignore file inside its private analysis directory. Adding
+`.hypothra/` to your root ignore file is optional. If you change root ignore rules
+after analysis, refresh the scan because they form part of its source digest.
+Initialization does not rewrite your source files or install the inspected
+project's dependencies.
 
 The package is not yet available from the public npm registry. Always install
 the explicit local archive. After modifying Hypothra, rebuild its archive and
 reinstall it in your test project to use the changes.
 
-## 3. Review what Hypothra understood
+## 3. AI fills the details; you review and edit
+
+You do not need to write a complete product description. `init` collects source
+evidence and selected excerpts, then asks a signed-in Codex CLI or your configured
+compatible engine to fill the name, description, target users, value proposition,
+monetization, technology stack, features, and user journeys. You can optionally add
+context with `--description`, but it is not required.
+
+The first dashboard visit can finish this analysis automatically for a structural
+draft. A progress card stays visible while AI works; the result appears in the
+editable fields when ready. Review and correct it before confirming. Existing
+owner-written descriptions are preserved, and editing during analysis never allows
+an older result to overwrite newer saved corrections.
+
+If Codex is not signed in, connect an engine once. A compatible endpoint can be
+configured with `HYPOTHRA_AI_ENDPOINT`, `HYPOTHRA_AI_MODEL`, and a local token if
+required. You can explicitly retry with **Analyze with AI**. Use `--no-ai` to opt
+out for a project or `HYPOTHRA_AI_MODE=off` for a structural-only environment.
 
 ```powershell
 npm.cmd exec --offline -- hypothra dashboard .
 ```
 
-Use the local panel to inspect source references and edit the model. You can also
-edit `.hypothra/project.json` in your editor:
+Use the local panel to inspect and correct the AI's interpretation. Normal fields
+cover descriptions, technologies, features, user journeys, and remaining questions.
+You can also edit `.hypothra/project.json` in your editor.
 
 The panel now guides you through **Your product → Launch plan → App checks → Your
 results**. Ordinary forms handle the description, audience, technologies, features,

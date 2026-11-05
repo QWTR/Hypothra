@@ -27,6 +27,13 @@ export const projectModelSchema = z.object({
 }).strict();
 export type ProjectModel = z.infer<typeof projectModelSchema>;
 
+export const aiJobSchema = z.object({
+  id: z.string(), status: z.enum(["idle", "running", "completed", "failed", "unavailable", "disabled"]),
+  message: z.string(), provider: z.string().optional(), startedAt: z.string().optional(), finishedAt: z.string().optional(),
+  modelRevision: digestSchema.optional(), sourceDigest: digestSchema.optional(), contextFiles: z.number().int().nonnegative().optional(),
+}).strict();
+export type AIJob = z.infer<typeof aiJobSchema>;
+
 export const benchmarkSchema = z.object({
   id, platform: z.enum(["meta", "tiktok", "other"]), country: z.string().regex(/^[A-Z]{2}$/),
   currency: z.string().regex(/^[A-Z]{3}$/), objective: z.enum(["traffic", "conversions", "awareness", "mixed"]),

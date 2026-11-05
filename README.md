@@ -23,8 +23,9 @@ Synthetic personas → real local browser journeys → observed failures
 Interactive report: scenarios, evidence, uncertainties, and conditional bug impact
 ```
 
-**v0.2.0 is a working local development release.** Source analysis is structural;
-semantic interpretation and AI-planned journeys are optional integrations. Published
+**v0.2.0 is a working local development release.** Initialization automatically asks
+AI to turn source evidence into a filled, editable product understanding. It uses
+a signed-in Codex CLI or a compatible engine configured once. Published
 ad costs can be read from the public web without a Meta/TikTok account or API key.
 Your own account history remains an optional additional source. Personas are synthetic,
 and their reactions are hypotheses. A reproduced application error is runtime
@@ -57,7 +58,27 @@ signup path could invalidate an otherwise attractive advertising scenario.
 No real accounts, messages, advertisements, payments, or production services are
 involved. Stop the demo with Ctrl+C. The ports must be free.
 
-## Install Hypothra inside another project
+## Choose any project folder
+
+Hypothra does **not** need to live inside the application being analyzed. From
+the Hypothra checkout, run:
+
+```powershell
+cd D:\Hypothra
+npm.cmd start
+```
+
+Open the printed local URL, click **Browse folders…**, and choose your project.
+You can also paste an absolute path and click **Open & analyze project**. Hypothra
+initializes its private analysis folder there and fills the product details with
+AI automatically. App source files and dependencies stay where they are.
+
+Use the same picker to switch projects. Each project retains its own understanding,
+corrections, launch plan, and reports. The native chooser is available on Windows;
+an absolute path can be pasted on other platforms. No project is scanned before
+you select it. A private `.hypothra/.gitignore` keeps analysis artifacts out of Git.
+
+## Optional: install the CLI inside a project
 
 Build a portable npm package from the source checkout:
 
@@ -71,7 +92,7 @@ archive. Windows example:
 ```powershell
 cd D:\MyTestProject
 npm.cmd install --save-dev D:\Hypothra\work\releases\hypothra-0.2.0.tgz --ignore-scripts
-npm.cmd exec --offline -- hypothra init . --description "What this product does and who it serves"
+npm.cmd exec --offline -- hypothra init .
 npm.cmd exec --offline -- hypothra dashboard .
 ```
 
@@ -90,7 +111,7 @@ Inside the source checkout you can use these same commands with an explicit proj
 directory instead of `.`:
 
 ```sh
-npm exec -- hypothra init . --description "A route planner with a paid premium tier"
+npm exec -- hypothra init .
 npm exec -- hypothra review .
 # Correct .hypothra/project.json or use the local dashboard.
 npm exec -- hypothra approve . --revision <hash-shown-by-review>
@@ -99,17 +120,35 @@ npm exec -- hypothra launch .
 
 The project model contains the description, audience, value proposition, technology
 stack, capabilities, user journeys, unknowns, and source evidence references.
-The user can correct it before approving. Source or model edits invalidate approval;
+AI fills these fields from selected source excerpts; the owner reviews and corrects
+them instead of completing an empty form. An optional `--description` supplies extra
+context. `--no-ai` explicitly skips automatic inference. The user can correct any
+project field before approving. Source or model edits invalidate approval;
 `hypothra refresh` rescans and preserves the previous model for comparison.
 
 Initialization never executes the inspected project's scripts. It creates private
-working files under `.hypothra/` and keeps the legacy `hypothra.scenario.json`
-example available for v0.1 commands. Add `.hypothra/` to your own project's ignore
-file before sharing that project.
+working files under `.hypothra/`, with a local ignore file, and keeps the legacy
+`hypothra.scenario.json` example available for v0.1 CLI commands.
 
-### Make the understanding model-assisted
+### Automatic AI understanding
 
-Two paths are available:
+`init` detects a signed-in local Codex CLI and uses it without requiring a separate
+model API key. The dashboard also starts a first analysis for an existing structural
+draft and shows progress until the fields are ready. It does not rerun an already
+analyzed project or erase subsequent owner edits. **Re-analyze with AI** is an
+explicit retry; a pre-analysis copy is saved as `project.before-ai.json`.
+
+The CLI runs in a disposable directory with read-only permissions and model tools,
+apps, hooks, and memory disabled. It receives bounded, redacted source excerpts
+and existing evidence, not unrestricted project filesystem access. Normal model
+account usage applies. [Codex supports saved authentication and structured exec
+output](https://learn.chatgpt.com/docs/non-interactive-mode).
+
+If no engine is connected, the panel explains that once instead of pretending a
+structural template was generated by AI. Set `HYPOTHRA_AI_MODE=off` for structural-only
+or CI runs. The regular test suite disables live inference automatically.
+
+Two alternative integration paths remain available:
 
 1. Bind the MCP server to the initialized project. Your existing AI host can read
    evidence and propose a corrected model. It cannot approve that model for you.
@@ -233,8 +272,10 @@ and `.hypothraignore` rules. JavaScript/TypeScript AST extraction, basic Python
 routes, Prisma declarations, HTML/CSS, and selected manifests are supported;
 dynamic behavior and arbitrary frameworks require review.
 
-The default workflow makes no model or advertising-account requests. Optional
-integrations require explicit commands and local credentials. Browser routing
+Automatic understanding uses your configured model account. Structural-only
+commands and `init --no-ai` make no model calls. No advertising-account access is
+needed for published price lookup. Optional account-history integrations require
+explicit commands and local credentials. Browser routing
 limits requests to the chosen test origin, but the test application's backend can
 still perform its own side effects. Use synthetic data and isolated services.
 Screenshots may contain whatever you put in that test app and remain local.

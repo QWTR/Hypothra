@@ -10,8 +10,12 @@ npm run package:verify
 npm audit
 ```
 
-`npm test` builds every workspace before running Node's test runner. Chromium is
-required: missing browser installation is a failure, not a silently skipped real
+`npm test` builds every workspace before running Node's test runner.
+Live model calls are disabled by the test launcher; controlled model responses
+exercise automatic filling without using a developer's account. A real signed-in
+Codex smoke test is separate evidence and is never silently run in CI.
+
+Chromium is required: missing browser installation is a failure, not a silently skipped real
 browser test. CI installs browser dependencies and runs Windows/Linux on Node 22/24.
 
 ## What is covered
@@ -28,6 +32,8 @@ browser test. CI installs browser dependencies and runs Windows/Linux on Node 22
 | MCP | Actual stdio client/server exchange; root scope, unavailable approval tools, proposals invalidating approval |
 | Dashboard | Actual HTTP API; write token, origin checks, saved inputs, stale report rejection |
 | Guided UI | Real browser product corrections, public price selection, preserved unsaved budgets, local checks, results, and phone-width layout |
+| Automatic understanding | Controlled inference fills all fields, shows progress, protects owner edits, preserves confirmation gates, and refreshes untouched ad templates |
+| Separate project selection | A standalone panel browses/opens two external folders, initializes their own state, and rejects stale cross-project writes |
 | Public ad prices | Publisher-specific period/metric parsing, global scope, no credentials, currency conversion, and closed failure on unverifiable data |
 | Model adapter | Mocked compatible endpoint, explicit upload gate, evidence and hypothesis checks |
 | Journey planning | Actual rendered control inventory excludes values; mocked model proposals reject invented selectors and require consent |
