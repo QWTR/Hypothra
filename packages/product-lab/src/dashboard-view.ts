@@ -86,5 +86,13 @@ export function dashboardHtml(token: string): string {
       <p id="revision" class="meta code"></p><button id="reload">Reload saved data / discard edits</button>
     </details>
     <footer>Your work stays in this local project. Public price lookup contacts published sources only when you click it. No ads are purchased or published.</footer>
+    <dialog id="folder-picker" aria-labelledby="folder-picker-title">
+      <div class="panel-head"><div><h2 id="folder-picker-title">Choose your project folder</h2><p>Browse a drive, open a folder, then select it below.</p></div><button id="folder-cancel" type="button" aria-label="Close folder picker">Close</button></div>
+      <div id="folder-roots" class="toolbar"></div>
+      <form id="folder-path-form" class="toolbar" style="margin:14px 0"><button id="folder-parent" type="button">↑ Up</button><input id="folder-path" aria-label="Folder browser path" autocomplete="off" style="flex:1;width:200px" required><button type="submit">Go</button></form>
+      <p id="folder-picker-status" role="status" class="help"></p><div id="folder-list" aria-label="Folders"></div>
+      <div class="actions"><span class="help">Your application stays in its current location.</span><button id="folder-select" class="primary" type="button">Open & analyze this folder</button></div>
+    </dialog>
+    <style>#folder-picker{color:var(--text);background:var(--panel);border:1px solid #47576d;border-radius:15px;padding:24px;width:min(740px,calc(100vw - 24px));max-height:88vh;box-shadow:0 25px 90px #0008}#folder-picker::backdrop{background:#030810bd;backdrop-filter:blur(4px)}#folder-picker h2{font-size:24px;margin:0}#folder-list{max-height:38vh;min-height:140px;overflow:auto;border:1px solid var(--line);border-radius:8px}#folder-list button{display:block;text-align:left;width:100%;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;overflow-wrap:anywhere;padding:13px 16px}#folder-list button:hover,#folder-list button:focus-visible{background:#26384d}#folder-picker .actions{margin-top:16px}#folder-path{min-width:100px}#folder-picker .panel-head p{font-size:13px}@media(max-width:500px){#folder-picker{padding:16px}#folder-picker .panel-head{flex-wrap:wrap}}</style>
   </main><script>const token=${inlineJson(token)};(${dashboardClient.toString()})(token);</script></body></html>`;
 }

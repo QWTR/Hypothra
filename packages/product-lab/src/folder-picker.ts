@@ -1,29 +1,35 @@
-import { spawn } from "node:child_process";
+import { access, lstat, opendir, realpath } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, parse } from "node:path";
 
-/** Explicit user-triggered native picker; paths never become shell command text. */
-export async function chooseProjectFolder(initialDirectory?: string): Promise<string | null> {
-  if (process.platform !== "win32") throw new Error("Paste the full project folder path here. The native folder picker is currently available on Windows.");
-  const script = `Add-Type -AssemblyName System.Windows.Forms
-$taskFolderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$taskFolderDialog.Description = 'Choose the project Hypothra should understand'
-$taskFolderDialog.ShowNewFolderButton = $false
-if ($env:HYPOTHRA_INITIAL_FOLDER) { $taskFolderDialog.SelectedPath = $env:HYPOTHRA_INITIAL_FOLDER }
-$taskFolderOwner = New-Object System.Windows.Forms.Form
-$taskFolderOwner.TopMost = $true
-$taskFolderOwner.ShowInTaskbar = $false
-$taskFolderOwner.Opacity = 0
-$taskFolderOwner.Show()
-try { if ($taskFolderDialog.ShowDialog($taskFolderOwner) -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); [Console]::WriteLine($taskFolderDialog.SelectedPath) } }
-finally { $taskFolderDialog.Dispose(); $taskFolderOwner.Close(); $taskFolderOwner.Dispose() }`;
-  return new Promise((resolve, reject) => {
-    const child = spawn("powershell.exe", ["-NoProfile", "-STA", "-Command", script], { windowsHide: true,
-      env: { ...process.env, HYPOTHRA_INITIAL_FOLDER: initialDirectory ?? "" }, stdio: ["ignore", "pipe", "pipe"] });
-    let output = "";
-    child.stdout.setEncoding("utf8");
-    const timer = setTimeout(() => { child.kill(); reject(new Error("Folder selection timed out. Try again or paste the project path.")); }, 180_000);
-    child.stdout.on("data", chunk => { output += chunk.toString("utf8"); if (output.length > 32_768) child.kill(); });
-    child.stderr.on("data", () => {});
-    child.once("error", () => { clearTimeout(timer); reject(new Error("The folder picker could not open. Paste the full project path instead.")); });
-    child.once("close", code => { clearTimeout(timer); if (code !== 0) reject(new Error("The folder picker did not finish. Paste the full project path instead.")); else resolve(output.trim() || null); });
-  });
+/** Folder names only. The authenticated panel owns navigation; no desktop popup is needed. */
+export async function listProjectFolders(requested?: string, current?: string) {
+  const selected = requested || current || homedir();
+  if (!isAbsolute(selected)) throw new Error("Enter a full folder path, for example D:\\MyProjects.");
+  let directory: string;
+  try {
+    directory = await realpath(selected);
+    if (!(await lstat(directory)).isDirectory()) throw new Error("not-directory");
+  } catch { throw new Error("That folder could not be opened. Check the path or choose another folder."); }
+  const roots: string[] = [];
+  if (process.platform === "win32") {
+    await Promise.all(Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ", async letter => {
+      const root = `${letter}:\\`;
+      try { await Promise.race([access(root), new Promise((_, reject) => { const timer = setTimeout(() => reject(new Error("timeout")), 1200); timer.unref(); })]); roots.push(root); }
+      catch { /* Unavailable drives are not listed. */ }
+    }));
+    roots.sort();
+  } else roots.push(parse(directory).root);
+  const folders: { name: string; path: string }[] = [];
+  let truncated = false;
+  try {
+    let entries = 0;
+    for await (const item of await opendir(directory)) {
+      if (++entries > 10_000 || folders.length >= 1000) { truncated = true; break; }
+      if (!item.isDirectory() || item.isSymbolicLink() || item.name.startsWith(".") || ["node_modules", "$RECYCLE.BIN", "System Volume Information"].includes(item.name)) continue;
+      folders.push({ name: item.name, path: join(directory, item.name) });
+    }
+  } catch { throw new Error("This folder is not readable. Choose a different folder or enter its full path."); }
+  folders.sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
+  return { directory, parent: dirname(directory) === directory ? null : dirname(directory), roots, folders, truncated };
 }

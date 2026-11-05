@@ -26,8 +26,9 @@ as one of its dependencies.
 The selected project gets a private `.hypothra/` analysis folder with its own
 ignore file. AI fills the product description and fields automatically. Switching
 folders reopens each project's own saved understanding, settings, and reports.
-Save current edits before switching. The Windows native chooser opens only after
-you click **Browse folders…**; pasting an absolute path also works.
+Save current edits before switching. **Browse folders…** opens a visible folder
+browser inside the panel. Choose a drive, enter your project folder, then click
+**Open & analyze this folder**. You can also paste a path in its address bar.
 
 ### Optional project-local CLI installation
 

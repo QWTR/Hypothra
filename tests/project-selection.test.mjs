@@ -1,19 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { chromium } from "playwright";
 import { startDashboard } from "@hypothra/product-lab";
 
 test("standalone Hypothra selects and initializes separate project folders from the panel", { timeout: 30_000 }, async () => {
-  const area = await mkdtemp(join(tmpdir(), "hypothra-folder-selection-"));
+  const area = await realpath(await mkdtemp(join(tmpdir(), "hypothra-folder-selection-")));
   const first = join(area, "First app"), second = join(area, "Second app");
   await mkdir(first); await mkdir(second);
   await writeFile(join(first, "package.json"), '{"name":"first-app","dependencies":{"react":"^19"}}');
   await writeFile(join(second, "package.json"), '{"name":"second-app","dependencies":{"express":"^5"}}');
-  let picked = 0;
-  const dashboard = await startDashboard(undefined, 0, { folderPicker: async () => { picked++; return first; } });
+  const dashboard = await startDashboard(undefined, 0);
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
@@ -21,8 +20,14 @@ test("standalone Hypothra selects and initializes separate project folders from 
     await page.locator("#folder-current").filter({ hasText: "No project selected" }).waitFor();
     assert.equal(await page.locator(".steps").isVisible(), false);
     await page.getByRole("button", { name: "Browse folders…", exact: true }).click();
+    await page.getByRole("dialog", { name: "Choose your project folder" }).waitFor();
+    await page.getByLabel("Folder browser path", { exact: true }).fill(area);
+    await page.getByRole("button", { name: "Go", exact: true }).click();
+    await page.getByRole("button", { name: "Open folder First app", exact: true }).click();
+    await page.locator("#folder-list").getByText("No subfolders here.", { exact: false }).waitFor();
+    await page.getByRole("button", { name: "Open & analyze this folder", exact: true }).click();
     await page.locator("#folder-current").filter({ hasText: first }).waitFor();
-    assert.equal(picked, 1);
+    assert.equal(await page.getByRole("dialog").isVisible(), false);
     assert.equal(await page.locator(".steps").isVisible(), true);
     assert.match(await readFile(join(first, ".hypothra", "inspection.json"), "utf8"), /React/);
     assert.equal(await page.getByLabel("Product name", { exact: true }).inputValue(), "First app");

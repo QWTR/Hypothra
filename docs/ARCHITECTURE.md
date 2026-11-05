@@ -28,7 +28,7 @@ simulation-core ────────────────► CLI / MCP se
 - `ai.ts`: opt-in compatible model endpoint; validated model and journey proposals.
 - `auto-ai.ts` / `codex-ai.ts`: automatic initialization, background progress, configured-engine detection, structured Codex inference, owner-edit protection, and backups.
 - `dashboard.ts`: authenticated loopback endpoints, including explicit local checks and public cost lookup.
-- `folder-picker.ts`: user-triggered Windows folder selection; Hypothra can run separately from every inspected project.
+- `folder-picker.ts`: authenticated in-panel drive/folder navigation; Hypothra can run separately from every inspected project.
 - `dashboard-view.ts` / `dashboard-client.ts`: guided forms, draft preservation, and plain-language results.
 - `report.ts`: shared styling and escaped standalone report rendering.
 - `storage.ts`: bounded reads, local operation lock, atomic artifact writes, canonical hashing.

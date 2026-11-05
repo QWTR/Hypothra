@@ -24,7 +24,7 @@ Code, comments, UI, and documentation are English.
 | Panel structure, forms, and local HTTP endpoints | `packages/product-lab/src/dashboard.ts` |
 | Guided page layout and appearance | `packages/product-lab/src/dashboard-view.ts` |
 | Friendly forms and browser interactions | `packages/product-lab/src/dashboard-client.ts` |
-| Native Windows folder chooser | `packages/product-lab/src/folder-picker.ts` |
+| In-panel drive and folder navigation | `packages/product-lab/src/folder-picker.ts` |
 | Report layout, styling, and wording | `packages/product-lab/src/report.ts` |
 | Terminal commands and help | `packages/cli/src/index.ts` |
 | AI-host tools and root scope | `packages/mcp-server/src/server.ts` |

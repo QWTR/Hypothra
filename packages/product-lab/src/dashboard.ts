@@ -8,9 +8,9 @@ import { escapeHtml as esc } from "./report.js";
 import { dashboardHtml } from "./dashboard-view.js";
 import { findPublicPrices } from "./public-prices.js";
 import { queueAutomaticAnalysis, readAIStatus } from "./auto-ai.js";
-import { chooseProjectFolder } from "./folder-picker.js";
+import { listProjectFolders } from "./folder-picker.js";
 
-export async function startDashboard(initialDirectory?: string, port = 4317, options: { autoAI?: boolean; folderPicker?: (initial?: string) => Promise<string | null> } = {}) {
+export async function startDashboard(initialDirectory?: string, port = 4317, options: { autoAI?: boolean } = {}) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid dashboard port.");
   let currentDirectory = initialDirectory ? await realpath(initialDirectory) : null;
   if (currentDirectory) {
@@ -46,7 +46,10 @@ export async function startDashboard(initialDirectory?: string, port = 4317, opt
       const chunks: Buffer[] = []; let bytes = 0;
       for await (const chunk of request) { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) return json(413, { error: "Request exceeds its byte budget." }); chunks.push(chunk); }
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
-      if (path === "/api/project/browse") return json(200, { directory: await (options.folderPicker ?? chooseProjectFolder)(directory ?? undefined) });
+      if (path === "/api/project/browse") {
+        if (body.directory !== undefined && typeof body.directory !== "string") throw new Error("Invalid folder path.");
+        return json(200, await listProjectFolders(body.directory as string | undefined, directory ?? undefined));
+      }
       if (path === "/api/project/open") {
         if (typeof body.directory !== "string" || !isAbsolute(body.directory)) throw new Error("Choose a project folder or paste its full absolute path.");
         const selected = await realpath(body.directory);

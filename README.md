@@ -74,8 +74,9 @@ initializes its private analysis folder there and fills the product details with
 AI automatically. App source files and dependencies stay where they are.
 
 Use the same picker to switch projects. Each project retains its own understanding,
-corrections, launch plan, and reports. The native chooser is available on Windows;
-an absolute path can be pasted on other platforms. No project is scanned before
+corrections, launch plan, and reports. The folder browser opens directly inside
+the panel, with drive buttons, parent navigation, and an editable path. No desktop
+popup is required. No project is scanned before
 you select it. A private `.hypothra/.gitignore` keeps analysis artifacts out of Git.
 
 ## Optional: install the CLI inside a project

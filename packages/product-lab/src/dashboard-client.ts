@@ -13,6 +13,9 @@ export function dashboardClient(token: string) {
   let aiPoll: ReturnType<typeof setTimeout> | undefined;
   let publicResults: Awaited<ReturnType<typeof findPublicPrices>> | null = null;
   let busy = false;
+  let folderLocation = "";
+  let folderParent: string | null = null;
+  let folderRequest = 0;
   const dirty = new Set<string>();
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const value = (id: string) => $<HTMLInputElement>(id).value;
@@ -306,11 +309,43 @@ export function dashboardClient(token: string) {
     dirty.clear(); step(0);
   }
   $("folder-form").onsubmit = event => { event.preventDefault(); void action(() => openFolder(value("project-folder")), "Project opened. AI is preparing the details for you."); };
-  $("browse-project").onclick = () => { void action(async () => {
-    if (dirty.size) throw new Error("Save or discard your current edits before choosing another project.");
-    const selected = await api("/api/project/browse", {});
-    if (selected.directory) await openFolder(selected.directory);
-  }, "Folder selection finished. Your current project is shown below."); };
+  async function browseFolder(directory?: string) {
+    const requestId = ++folderRequest;
+    $("folder-picker-status").textContent = "Loading folders…";
+    $<HTMLButtonElement>("folder-select").disabled = true;
+    try {
+      const listing: { directory: string; parent: string | null; roots: string[]; folders: { name: string; path: string }[]; truncated: boolean } = await api("/api/project/browse", directory ? { directory } : {});
+      if (requestId !== folderRequest) return;
+      folderLocation = listing.directory; folderParent = listing.parent; put("folder-path", folderLocation);
+      const roots = $("folder-roots"); roots.replaceChildren();
+      for (const root of listing.roots) { const button = node("button", root); button.type = "button"; button.onclick = () => { void browseFolder(root); }; roots.append(button); }
+      const list = $("folder-list"); list.replaceChildren();
+      for (const folder of listing.folders) {
+        const button = node("button", "▸  " + folder.name); button.type = "button"; button.setAttribute("aria-label", "Open folder " + folder.name); button.onclick = () => { void browseFolder(folder.path); }; list.append(button);
+      }
+      if (!listing.folders.length) list.append(node("p", "No subfolders here. You can select this folder below.", "help"));
+      $("folder-picker-status").textContent = listing.truncated ? "Showing the first folders. Paste a path above if yours is not listed." : "Select this folder, or open a subfolder to continue.";
+      $<HTMLButtonElement>("folder-parent").disabled = folderParent === null;
+      $<HTMLButtonElement>("folder-select").disabled = false;
+    } catch (error) {
+      if (requestId !== folderRequest) return;
+      $("folder-picker-status").textContent = error instanceof Error ? error.message : "This folder could not be opened.";
+    }
+  }
+  $("browse-project").onclick = () => {
+    if (busy) return;
+    if (dirty.size) { message("Save or discard your current edits before choosing another project.", "error"); return; }
+    $<HTMLDialogElement>("folder-picker").showModal();
+    void browseFolder(value("project-folder") || undefined);
+  };
+  $("folder-cancel").onclick = () => { folderRequest++; $<HTMLDialogElement>("folder-picker").close(); };
+  $("folder-path-form").onsubmit = event => { event.preventDefault(); void browseFolder(value("folder-path")); };
+  $("folder-parent").onclick = () => { if (folderParent) void browseFolder(folderParent); };
+  $("folder-select").onclick = () => {
+    if (!folderLocation) return;
+    $<HTMLDialogElement>("folder-picker").close();
+    void action(() => openFolder(folderLocation), "Project opened. AI is preparing the details for you.");
+  };
   $("product-form").addEventListener("input", () => changed("product"));
   $("launch-form").addEventListener("input", () => { changed("launch"); updateBudget(); });
   $("prices-form").addEventListener("input", () => changed("prices"));

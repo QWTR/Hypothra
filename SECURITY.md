@@ -22,8 +22,9 @@ optional DOM inventories, and optional screenshots. Ignore it in the inspected
 project's Git configuration. Review any report before sharing it.
 New workspaces create a private local ignore file automatically. Selecting a
 project requires an explicit authenticated action in the panel; the chosen path
-must resolve to a specific absolute directory. The native Windows picker runs
-only on request, with paths passed as data rather than interpolated shell text.
+must resolve to a specific absolute directory. The in-panel folder browser returns
+directory names only, through authenticated requests. It does not launch a shell,
+desktop dialog, or project scripts.
 UI writes include the selected project identity to reject stale cross-project edits.
 
 ## Approval and output
