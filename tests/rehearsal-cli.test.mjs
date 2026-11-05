@@ -13,8 +13,10 @@ import { fakeInference, plan } from './rehearsal-fixture.mjs';
 test('CLI prepares and resumes an AI launch across separate processes using a controlled local model endpoint', { timeout: 40_000 }, async () => {
   const area = await mkdtemp(join(tmpdir(), 'hypothra-ai-cli-')), root = join(area, 'project');
   const fake = fakeInference((schema) => { if (schema === rehearsalPlanSchema) { const p = structuredClone(plan); p.channels[0].benchmarkId = null; return p; } });
+  let failModel = false;
   const server = createServer(async (request, response) => {
     try {
+      if (failModel) { response.writeHead(503); response.end('Synthetic model outage'); return; }
       assert.equal(request.headers.authorization, undefined);
       let body = ''; for await (const chunk of request) body += chunk;
       const payload = JSON.parse(body), instructions = payload.messages[0].content, data = JSON.parse(payload.messages[1].content);
@@ -39,5 +41,7 @@ test('CLI prepares and resumes an AI launch across separate processes using a co
     assert.equal(result.status, 'completed', result.message); assert.equal(result.audience.evaluated, 6);
     assert.equal(result.calls.completed, 3); assert.equal(result.calls.inputTokens, 300); assert.equal(result.calls.provider, 'configured-model');
     const saved = await run(['rehearse', 'status', root]); assert.deepEqual(saved.audience, result.audience);
+    failModel = true;
+    await assert.rejects(run(['rehearse', 'prepare', root, '--viewers', '6']), error => error.code === 1 && JSON.parse(error.stdout).status === 'failed');
   } finally { await new Promise(resolve => server.close(resolve)); await rm(area, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });

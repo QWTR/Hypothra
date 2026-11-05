@@ -126,13 +126,15 @@ async function main(args: string[]) {
     if (operation === "prepare") {
       await prepareRehearsal(options.directory, { idea: options.values.get("idea") ?? "", constraints: options.values.get("constraints") ?? "",
         viewers: Number(options.values.get("viewers") ?? 20), currency: options.values.get("currency") ?? "PLN", maxAICalls: Number(options.values.get("max-ai-calls") ?? 100) });
-      return json(await waitForRehearsal(options.directory));
+      const result = await waitForRehearsal(options.directory); json(result);
+      if (result?.status === "failed") process.exitCode = 1;
+      return;
     }
     const state = await readRehearsal(options.directory);
     if (!state) throw new Error("Prepare an AI launch plan first.");
     if (operation === "experience") return json(await configureExperience(options.directory, state.id, { baseUrl: options.required("url"), users: Number(options.required("users")), syntheticTestData: options.values.has("synthetic-test-data") }));
     if (operation !== "run") throw new Error("Use rehearse prepare, run, status, or experience.");
-    const pause = () => { void pauseRehearsal(options.directory, state.id).then(result => console.error(result.message)); };
+    const pause = () => { void pauseRehearsal(options.directory, state.id).then(result => console.error(result.message)).catch(error => console.error(error instanceof Error ? error.message : "Could not pause the current run.")); };
     process.once("SIGINT", pause);
     try {
       await resumeRehearsal(options.directory, state.id, options.values.has("max-ai-calls") ? { maxAICalls: Number(options.required("max-ai-calls")) } : {});
