@@ -1,0 +1,10 @@
+{
+  "name": "@hypothra/cli",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": { "hypothra": "bin/hypothra.mjs" },
+  "files": ["bin", "dist"],
+  "dependencies": { "@hypothra/simulation-core": "0.1.0", "@hypothra/project-scanner": "0.1.0" }
+}

@@ -1,0 +1,13 @@
+{
+  "months": 6,
+  "initialUsers": 1000,
+  "monthlyMarketingBudget": 500,
+  "acquisitionCost": 5,
+  "monthlyChurnRate": 0.05,
+  "monthlyOrganicGrowthRate": 0.02,
+  "paidConversionRate": 0.1,
+  "monthlyPrice": 10,
+  "fixedMonthlyCost": 200,
+  "costPerActiveUser": 0.1,
+  "currency": "USD"
+}
