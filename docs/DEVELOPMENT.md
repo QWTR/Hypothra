@@ -15,10 +15,13 @@ Code, comments, UI, and documentation are English.
 | Approval, refresh, stale evidence behavior | `packages/product-lab/src/workflow.ts` |
 | Launch arithmetic, budget checks, default assumptions | `packages/product-lab/src/launch.ts` |
 | Advertising CSV parsing and read-only integrations | `packages/product-lab/src/ads.ts` |
+| Public web price sources and currency conversion | `packages/product-lab/src/public-prices.ts` |
 | Optional model instructions and output checks | `packages/product-lab/src/ai.ts` |
 | Rendered control discovery | `packages/product-lab/src/discovery.ts` |
 | Browser actions, assertions, and permissions | `packages/product-lab/src/journeys.ts` |
 | Panel structure, forms, and local HTTP endpoints | `packages/product-lab/src/dashboard.ts` |
+| Guided page layout and appearance | `packages/product-lab/src/dashboard-view.ts` |
+| Friendly forms and browser interactions | `packages/product-lab/src/dashboard-client.ts` |
 | Report layout, styling, and wording | `packages/product-lab/src/report.ts` |
 | Terminal commands and help | `packages/cli/src/index.ts` |
 | AI-host tools and root scope | `packages/mcp-server/src/server.ts` |

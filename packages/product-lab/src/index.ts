@@ -9,3 +9,4 @@ export * from "./report.js";
 export * from "./dashboard.js";
 export * from "./ai.js";
 export * from "./discovery.js";
+export * from "./public-prices.js";

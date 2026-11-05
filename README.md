@@ -24,8 +24,9 @@ Interactive report: scenarios, evidence, uncertainties, and conditional bug impa
 ```
 
 **v0.2.0 is a working local development release.** Source analysis is structural;
-semantic interpretation and AI-planned journeys are optional integrations. Price
-connectors require your own authorized advertising account. Personas are synthetic,
+semantic interpretation and AI-planned journeys are optional integrations. Published
+ad costs can be read from the public web without a Meta/TikTok account or API key.
+Your own account history remains an optional additional source. Personas are synthetic,
 and their reactions are hypotheses. A reproduced application error is runtime
 evidence. Neither layer proves future demand or a real conversion rate.
 
@@ -136,6 +137,17 @@ Generated prices are clearly marked **synthetic assumptions**. CSV imports and
 read-only Meta/TikTok adapters can replace them with your own observed data.
 Old or mismatched measured evidence is rejected. See [advertising data](docs/AD-DATA.md).
 
+The normal panel uses four guided steps and ordinary forms; JSON is an advanced
+option. In **Launch plan**, click **Find published prices** to read public Meta and
+TikTok CPM/CPC benchmarks from AdKit, with the source period and published range.
+Choose **Use this cost estimate**, then save the plan. No advertising API key is
+needed. Global samples are labeled as global, and USD figures can be converted
+with a dated public NBP reference rate. The CLI equivalent is:
+
+```sh
+hypothra ads research . --currency PLN
+```
+
 For a local test version of your app:
 
 ```sh
@@ -198,7 +210,8 @@ Example for the source checkout:
 
 Without a root, only legacy `simulate_growth` is exposed. A bound initialized root
 adds `get_project_understanding`, `propose_project_understanding`, and
-`simulate_product_launch`. Set `HYPOTHRA_ALLOW_BROWSER=1` explicitly to additionally
+`simulate_product_launch`, plus `research_ad_costs` for public web benchmarks.
+Set `HYPOTHRA_ALLOW_BROWSER=1` explicitly to additionally
 expose test-page discovery, journey proposals, and execution of the active local
 journeys. Browser access is off by default. No approval or shell-execution tool exists.
 
@@ -232,6 +245,7 @@ Read [SECURITY.md](SECURITY.md) before using sensitive projects.
 - [x] Source evidence, editable understanding, and exact-revision approval
 - [x] Launch funnel with explicit budgets, creatives, source dates, and assumptions
 - [x] CSV cost import and optional read-only account connectors
+- [x] Guided forms, in-panel local app checks, and public-web ad costs without account credentials
 - [x] Real local browser journeys, DOM discovery, and observed failure reporting
 - [x] Optional model-assisted interpretation and validated journey proposals
 - [x] Local dashboard, interactive reports, scoped MCP tools, and portable archive

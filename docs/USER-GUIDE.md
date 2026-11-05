@@ -45,6 +45,11 @@ npm.cmd exec --offline -- hypothra dashboard .
 Use the local panel to inspect source references and edit the model. You can also
 edit `.hypothra/project.json` in your editor:
 
+The panel now guides you through **Your product → Launch plan → App checks → Your
+results**. Ordinary forms handle the description, audience, technologies, features,
+budget, ads, and conversion assumptions. JSON stays under **Advanced**. Unsaved
+changes remain in the forms while you move between steps or look up ad prices.
+
 - `project`: name, description, target users, value proposition, and monetization.
 - `stack`: technologies with observed evidence or user corrections.
 - `capabilities`: what the product does, each with a stable ID and evidence status.
@@ -86,9 +91,12 @@ Edit the launch plan in the panel or `.hypothra/launch.json`:
 - Supply explicit low/typical/high CTR, signup, activation, and payment assumptions.
 - Select a dated cost observation using `benchmarkId`.
 
-The generated observations in `benchmarks.json` are tutorial assumptions. Replace
-them with appropriate data before using a report to inform a budget decision.
-See [advertising data](AD-DATA.md) for CSV imports and account adapters.
+The generated observations in `benchmarks.json` are tutorial assumptions. In
+**Launch plan**, click **Find published prices**, inspect the source and dates,
+choose **Use this cost estimate**, then save your plan. Public Meta/TikTok cost
+lookup needs no advertising account or API key. Global scope and currency
+conversions stay visible. See [advertising data](AD-DATA.md) for details and
+optional additional sources.
 
 ```powershell
 npm.cmd exec --offline -- hypothra launch .
@@ -147,6 +155,9 @@ When `denyPermissions` is false, the runner grants only a synthetic geolocation 
 npm.cmd exec --offline -- hypothra journeys . --screenshots
 npm.cmd exec --offline -- hypothra launch . --with-runtime
 ```
+
+You can also click **Run app checks** in step 3, then **Calculate launch scenario**
+in step 4. The normal panel workflow requires no terminal commands after startup.
 
 Map a channel's `journeyId` to a real configured journey to attach its findings.
 An attached failed path produces a separately labeled conditional impact scenario.

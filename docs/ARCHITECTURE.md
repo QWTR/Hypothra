@@ -22,10 +22,13 @@ simulation-core ────────────────► CLI / MCP se
 - `workflow.ts`: initialization, approval, stale-state checks, artifacts, and orchestration.
 - `launch.ts`: deterministic funnel arithmetic and conditional bug-impact scenarios.
 - `ads.ts`: normalized CSV import and optional read-only account reporting adapters.
+- `public-prices.ts`: public benchmark extraction and dated currency conversion; no ad credentials.
 - `journeys.ts`: explicit local browser actions, assertions, and recorded observations.
 - `discovery.ts`: rendered control inventory for planning; no captured input values.
 - `ai.ts`: opt-in compatible model endpoint; validated model and journey proposals.
-- `dashboard.ts` / `report.ts`: loopback UI and escaped standalone report rendering.
+- `dashboard.ts`: authenticated loopback endpoints, including explicit local checks and public cost lookup.
+- `dashboard-view.ts` / `dashboard-client.ts`: guided forms, draft preservation, and plain-language results.
+- `report.ts`: shared styling and escaped standalone report rendering.
 - `storage.ts`: bounded reads, local operation lock, atomic artifact writes, canonical hashing.
 
 The original simulation core remains pure and backward compatible. The new launch

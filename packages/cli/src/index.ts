@@ -5,7 +5,7 @@ import { exampleScenario, simulateGrowth } from "@hypothra/simulation-core";
 import { inspectProject, scanProject } from "@hypothra/project-scanner";
 import { approveProject, benchmarksSchema, enrichUnderstanding, fetchAccountCosts, importCostCsv, initializeProject,
   projectStatus, readJson, refreshProject, reviewProject, runLaunch, runProjectJourneys, saveExperimentFile,
-  saveProjectDraft, startDashboard, workspace, inspectTestPage, readProjectContext, suggestJourneys, withLock, writeArtifact } from "@hypothra/product-lab";
+  saveProjectDraft, startDashboard, workspace, inspectTestPage, readProjectContext, suggestJourneys, withLock, writeArtifact, findPublicPrices } from "@hypothra/product-lab";
 
 const help = `Hypothra 0.2.0 — understand your product and test a launch
 
@@ -27,6 +27,7 @@ Usage:
     --objective traffic --audience "Selected audience" --source <https-url> --id <benchmark-id>
   hypothra ads refresh [directory] --platform meta --account <numeric-id> --country PL
     --currency PLN --objective traffic --audience "Selected audience" --since YYYY-MM-DD --until YYYY-MM-DD
+  hypothra ads research [directory] [--currency PLN]  Read published web benchmarks; no ad account needed
   hypothra simulate [--config <file>]     Legacy deterministic growth model
   hypothra --help
   hypothra --version
@@ -129,7 +130,14 @@ async function main(args: string[]) {
   }
   if (command === "ads") {
     const [operation, ...tail] = rest;
-    if (operation !== "import" && operation !== "refresh") throw new Error("Use ads import or ads refresh.");
+    if (operation === "research") {
+      const options = flags(tail, ["currency"]);
+      const state = await projectStatus(options.directory);
+      const result = await findPublicPrices(options.values.get("currency") ?? state.plan.currency);
+      await saveExperimentFile(options.directory, "benchmarks", [...state.benchmarks.filter(item => !result.benchmarks.some(found => found.id === item.id)), ...result.benchmarks]);
+      return json({ status: "saved", ...result, next: "Choose one of these cost estimates in your launch plan. No advertising account or API key was used." });
+    }
+    if (operation !== "import" && operation !== "refresh") throw new Error("Use ads research for public web data, or ads import / ads refresh for your own optional campaign history.");
     const options = flags(tail, ["file", "platform", "country", "currency", "objective", "audience", "source", "id", "account", "since", "until", "env-file"]);
     if (operation === "refresh" && options.values.has("env-file")) process.loadEnvFile(options.required("env-file"));
     const platform = options.required("platform"), objective = options.required("objective");

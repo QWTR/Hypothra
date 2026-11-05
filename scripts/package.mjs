@@ -9,7 +9,7 @@ const staging = join(repo, "work", "distribution");
 const releases = join(repo, "work", "releases");
 await mkdir(staging, { recursive: true });
 await mkdir(releases, { recursive: true });
-const external = ["playwright", "typescript-ast", "ignore", "zod", "@modelcontextprotocol/server", "@modelcontextprotocol/server/*"];
+const external = ["cheerio", "playwright", "typescript-ast", "ignore", "zod", "@modelcontextprotocol/server", "@modelcontextprotocol/server/*"];
 for (const [entry, output] of [["packages/cli/src/index.ts", "cli.mjs"], ["packages/mcp-server/src/index.ts", "mcp.mjs"]]) {
   await build({ entryPoints: [join(repo, entry)], outfile: join(staging, "dist", output), bundle: true,
     format: "esm", platform: "node", target: "node22", external, legalComments: "eof" });
@@ -20,7 +20,7 @@ await writeFile(join(staging, "package.json"), JSON.stringify({ name: "hypothra"
   description: "Understand a software product and run evidence-aware launch experiments", license: "MIT", type: "module",
   engines: { node: ">=22" }, bin: { hypothra: "dist/cli.mjs", "hypothra-mcp": "dist/mcp.mjs" },
   files: ["dist", "README.md", "LICENSE", "SECURITY.md"],
-  dependencies: { "@modelcontextprotocol/server": "2.4.0", "ignore": "7.0.14", "playwright": "1.64.1", "typescript-ast": "npm:typescript@5.9.3", "zod": "4.6.7" },
+  dependencies: { "cheerio": "1.2.0", "@modelcontextprotocol/server": "2.4.0", "ignore": "7.0.14", "playwright": "1.64.1", "typescript-ast": "npm:typescript@5.9.3", "zod": "4.6.7" },
 }, null, 2) + "\n");
 for (const name of ["README.md", "LICENSE", "SECURITY.md"]) await copyFile(join(repo, name), join(staging, name));
 if (!process.env.npm_execpath) throw new Error("Run through npm run package.");

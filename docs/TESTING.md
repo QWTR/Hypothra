@@ -27,6 +27,8 @@ browser test. CI installs browser dependencies and runs Windows/Linux on Node 22
 | CLI | Actual subprocesses through init, review, approval, browser execution, launch, report, and stale journey rejection |
 | MCP | Actual stdio client/server exchange; root scope, unavailable approval tools, proposals invalidating approval |
 | Dashboard | Actual HTTP API; write token, origin checks, saved inputs, stale report rejection |
+| Guided UI | Real browser product corrections, public price selection, preserved unsaved budgets, local checks, results, and phone-width layout |
+| Public ad prices | Publisher-specific period/metric parsing, global scope, no credentials, currency conversion, and closed failure on unverifiable data |
 | Model adapter | Mocked compatible endpoint, explicit upload gate, evidence and hypothesis checks |
 | Journey planning | Actual rendered control inventory excludes values; mocked model proposals reject invented selectors and require consent |
 | Distribution | Archive installed in an independent temporary project, without monorepo runtime dependencies |

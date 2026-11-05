@@ -1,5 +1,30 @@
 # Advertising data and optional connectors
 
+## Start with public web data — no Meta or TikTok API key
+
+In the panel, open **Launch plan → Find published prices**. Hypothra reads
+[AdKit's published benchmark tables](https://adkit.so/benchmarks), extracts the
+platform-specific CPM and CPC percentiles, and keeps the original observation
+month. Click **Use this cost estimate**, then save your plan. Your unsaved budget
+and ad copy stay intact while you compare prices.
+
+The equivalent command is `hypothra ads research . --currency PLN`. It saves the
+verified public observations; select a returned benchmark ID in your launch plan.
+No advertising account, token, or paid search service is needed. Optional account
+adapters below are only for users who want to add their own campaign history.
+
+The current publisher sample spans countries and objectives. It is recorded as
+country `ZZ` (global) and objective `mixed`; the engine explicitly warns that it
+is not a measured price for your selected market or exact campaign objective.
+Reported lower/typical/higher costs are published percentiles, not invented prices.
+If the markup, date, currency, or numbers cannot be verified, the lookup fails
+with an explanation rather than silently making up data.
+
+Prices are published in USD. When another supported currency is selected, the
+reader uses public NBP reference rates, stores the original USD range, conversion
+rate, source URL, and rate date, and labels the conversion in the report. It does
+not claim the converted figure was measured for a Polish campaign.
+
 There is no universal fixed price for a future Meta or TikTok campaign. Account
 history, published benchmarks, and manual assumptions answer different questions.
 Hypothra requires each observation to carry its context and source dates.
@@ -13,7 +38,7 @@ Hypothra requires each observation to carry its context and source dates.
 
 Every observation specifies platform, country, currency, objective, audience, CPM
 or CPC range, collection date, and observation period. A measured/public source
-needs an HTTPS provenance URL without query strings or embedded credentials.
+needs an HTTPS provenance URL without embedded credentials or sensitive query parameters.
 
 The launch plan rejects platform, geography, currency, or objective mismatches.
 Measured sources older than `maxBenchmarkAgeDays` are rejected. Collection cannot

@@ -29,11 +29,13 @@ export type ProjectModel = z.infer<typeof projectModelSchema>;
 
 export const benchmarkSchema = z.object({
   id, platform: z.enum(["meta", "tiktok", "other"]), country: z.string().regex(/^[A-Z]{2}$/),
-  currency: z.string().regex(/^[A-Z]{3}$/), objective: z.enum(["traffic", "conversions", "awareness"]),
+  currency: z.string().regex(/^[A-Z]{3}$/), objective: z.enum(["traffic", "conversions", "awareness", "mixed"]),
   audience: label, metric: z.enum(["cpm", "cpc"]), price: range,
   source: z.object({ type: z.enum(["manual-assumption", "account-export", "account-api", "public-benchmark"]),
     label, url: z.string().url().max(2000).optional(), observedFrom: date, observedTo: date, collectedAt: date,
     sampleImpressions: z.number().int().min(1).max(1e15).optional() }).strict(),
+  currencyConversion: z.object({ originalCurrency: z.string().regex(/^[A-Z]{3}$/), originalPrice: range,
+    rate: z.number().positive().max(1e6), date, sourceUrl: z.string().url().max(2000) }).strict().optional(),
 }).strict().superRefine((value, context) => {
   if (value.price.low <= 0) context.addIssue({ code: "custom", message: "Advertising price must be positive" });
   if (value.source.observedFrom > value.source.observedTo || value.source.observedTo > value.source.collectedAt) {

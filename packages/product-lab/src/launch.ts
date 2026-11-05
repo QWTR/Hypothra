@@ -35,7 +35,7 @@ export function validateBenchmarks(input: unknown, asOf: string): Benchmark[] {
     if (item.source.type !== "manual-assumption" && !item.source.url) throw new Error("Measured or published benchmark sources need a provenance URL.");
     if (item.source.url) {
       const url = new URL(item.source.url);
-      if (url.protocol !== "https:" || url.username || url.password || url.search) throw new Error("Source URL must be HTTPS without credentials or query parameters.");
+      if (url.protocol !== "https:" || url.username || url.password || [...url.searchParams.keys()].some(key => /token|secret|password|api.?key|auth/i.test(key))) throw new Error("Source URL must be HTTPS without credentials or sensitive query parameters.");
     }
   }
   return data;
@@ -58,9 +58,11 @@ export function simulateLaunch(modelInput: unknown, planInput: unknown, benchmar
   const channels = plan.channels.map(channel => {
     const price = selected.get(channel.benchmarkId);
     if (!price) throw new Error(`Missing benchmark: ${channel.benchmarkId}`);
-    if (price.platform !== channel.platform || price.country !== plan.country || price.currency !== plan.currency || price.objective !== channel.objective) {
+    if (price.platform !== channel.platform || price.country !== plan.country && price.country !== "ZZ" || price.currency !== plan.currency || price.objective !== channel.objective && price.objective !== "mixed") {
       throw new Error(`Benchmark does not match platform, country, currency, or objective for ${channel.id}.`);
     }
+    if (price.country === "ZZ") warnings.add(`${price.id} is a global benchmark, not a price measured for ${plan.country}. Local results may differ.`);
+    if (price.objective === "mixed") warnings.add(`${price.id} combines campaign objectives; it is a planning reference for ${channel.objective}, not an exact match.`);
     if (channel.creative.capabilityIds.some(id => !capabilities.has(id))) throw new Error(`Creative refers to an unknown capability in ${channel.id}.`);
     if (channel.creative.capabilityIds.length === 0) warnings.add(`Creative promise for ${channel.id} has no mapped product capability.`);
     const ageDays = daysBetween(price.source.observedTo, options.asOf);

@@ -17,7 +17,7 @@ test("bound MCP host reads evidence and proposes corrections but cannot approve 
       env: { ...getDefaultEnvironment(), HYPOTHRA_PROJECT_ROOT: root }, stderr: "pipe" });
     await client.connect(transport);
     const names = (await client.listTools()).tools.map(tool => tool.name);
-    assert.deepEqual(names, ["simulate_growth", "get_project_understanding", "propose_project_understanding", "simulate_product_launch"]);
+    assert.deepEqual(names, ["simulate_growth", "research_ad_costs", "get_project_understanding", "propose_project_understanding", "simulate_product_launch"]);
     assert.ok(!names.some(name => /approve|shell|browser|ads/.test(name)));
     const context = await client.callTool({ name: "get_project_understanding", arguments: {} });
     assert.equal(context.structuredContent.revision, init.revision);

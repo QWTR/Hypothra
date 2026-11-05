@@ -162,14 +162,16 @@ export async function projectStatus(directory: string) {
   ]);
   let report: (LaunchReport & { inputsRevision?: string; runtimeAttached?: boolean }) | null = null;
   let reportCurrent = false;
+  let runtime: RuntimeReport | null = null;
+  if (await exists(join(path, "runtime.json"))) runtime = await readJson(join(path, "runtime.json"), runtimeReportSchema);
+  const runtimeCurrent = runtime !== null && runtime.modelRevision === review.revision && runtime.configurationRevision === revision(journeys);
   if (await exists(join(path, "launch-report.json"))) {
     report = await readJson(join(path, "launch-report.json"));
-    let runtime: RuntimeReport | null = null;
-    if (report!.runtimeAttached) runtime = await readJson(join(path, "runtime.json"), runtimeReportSchema);
-    reportCurrent = report!.inputsRevision === revision({ modelRevision: review.revision, plan, benchmarks, runtime })
-      && (!runtime || runtime.configurationRevision === revision(journeys));
+    const attached = report!.runtimeAttached ? runtime : null;
+    reportCurrent = report!.inputsRevision === revision({ modelRevision: review.revision, plan, benchmarks, runtime: attached })
+      && (!report!.runtimeAttached || runtimeCurrent);
   }
-  return { ...review, plan, benchmarks, journeys, report, reportCurrent };
+  return { ...review, plan, benchmarks, journeys, report, reportCurrent, runtime, runtimeCurrent };
 }
 
 export async function saveExperimentFile(directory: string, kind: "launch" | "benchmarks" | "journeys", value: unknown) {

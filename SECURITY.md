@@ -50,6 +50,14 @@ outside this release. A locally configured journey can submit synthetic forms.
 
 ## Optional model and advertising integrations
 
+Public benchmark lookup needs no advertising credentials. An explicit panel,
+CLI, or MCP action reads a fixed public AdKit benchmark URL and, when converting
+currency, fixed public NBP exchange-rate endpoints. Responses have byte/time
+limits, redirects are rejected, and ambiguous prices/dates are not imported.
+Global samples stay global and currency conversion preserves original values.
+The dashboard can run the saved local browser checks only through an explicit
+authenticated POST action; the same approved-model and local-origin rules apply.
+
 Scanning, review, and deterministic calculations require no external model.
 An explicit `enrich` or `plan-journeys` command with `--allow-upload` sends bounded,
 redacted summaries or DOM inventory to your configured endpoint. Remote endpoints
