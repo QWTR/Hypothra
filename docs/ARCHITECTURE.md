@@ -76,7 +76,12 @@ No model, provider account, or token is installed automatically.
 The automatic path detects existing Codex authentication, or an explicitly
 configured compatible endpoint. Codex executes with user config/rules ignored,
 read-only permissions and model tools disabled, in a disposable directory that
-contains only the output schema. Source context is supplied on stdin. Generated
+contains the output schema and generated response. Source context is supplied on stdin.
+The input budget samples repetitive structural claims, then drops uncited evidence
+and trailing source excerpts as needed; the payload records omissions. Owner-written
+project text and evidence cited by retained draft claims are preserved. Input is
+validated before a process is started. Temporary cleanup retries filesystem locks
+and cannot replace an analysis result or hide the original inference error. Generated
 output is schema/evidence checked before saving, never auto-approved, and an older
 in-flight result cannot overwrite newer owner edits. Untouched example ad templates
 are updated to reference the new model; custom budgets and ad copy are preserved.

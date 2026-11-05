@@ -74,7 +74,11 @@ projects you do not want processed by a model. No Meta/TikTok credentials are ne
 The Codex adapter ignores user configuration and rules for its run, disables model
 tools/apps/hooks/memory, uses read-only execution permissions, and operates in a
 disposable directory. It does not give the model unrestricted project access.
-Temporary files are removed and account secrets are never copied into the project.
+Temporary cleanup retries Windows file locks. If a lock persists, the disposable
+directory may remain in the current user's OS temp folder with its output schema
+and generated response; cleanup failure does not invalidate an analysis result.
+Raw source input is supplied on stdin rather than saved there. Account secrets
+are never copied into the project.
 AI only proposes understanding; human approval remains necessary. Newer saved
 owner edits defeat stale AI results, and the previous model is backed up.
 

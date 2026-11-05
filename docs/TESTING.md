@@ -33,6 +33,7 @@ browser test. CI installs browser dependencies and runs Windows/Linux on Node 22
 | Dashboard | Actual HTTP API; write token, origin checks, saved inputs, stale report rejection |
 | Guided UI | Real browser product corrections, public price selection, preserved unsaved budgets, local checks, results, and phone-width layout |
 | Automatic understanding | Controlled inference fills all fields, shows progress, protects owner edits, preserves confirmation gates, and refreshes untouched ad templates |
+| AI input and cleanup | Large inputs stay within budget with explicit omissions; invalid inputs fail before process start; locked temp directories are nonfatal and cleanup cannot escape its temp boundary |
 | Separate project selection | A standalone panel browses/opens two external folders, initializes their own state, and rejects stale cross-project writes |
 | Public ad prices | Publisher-specific period/metric parsing, global scope, no credentials, currency conversion, and closed failure on unverifiable data |
 | Model adapter | Mocked compatible endpoint, explicit upload gate, evidence and hypothesis checks |

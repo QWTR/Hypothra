@@ -2,7 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { delimiter, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 import { redact } from "@hypothra/project-scanner";
 import type { Inspection } from "@hypothra/project-scanner";
@@ -41,10 +41,41 @@ export function codexAvailability(projectRoot?: string): { available: boolean; e
 }
 
 export function analysisPayload(model: ProjectModel, inspection: Inspection) {
-  const payload = redact(JSON.stringify({ draft: model, evidence: inspection.evidence.slice(0, 600), sourceExcerpts: inspection.context ?? [],
-    limits: { filesScanned: inspection.filesScanned, incomplete: inspection.truncated, excerptCount: inspection.context?.length ?? 0 } }));
-  if (Buffer.byteLength(payload) > 240_000) throw new Error("Project context is too large for automatic analysis. Narrow the scan with .hypothraignore.");
-  return payload;
+  // Structural drafts repeat much of the evidence. Keep a useful sample rather
+  // than rejecting a large project before its first analysis can start.
+  const draft = { ...model, stack: model.stack.slice(0, 100), capabilities: model.capabilities.slice(0, 35),
+    userJourneys: model.userJourneys.slice(0, 8), unknowns: model.unknowns.slice(0, 20) };
+  const referenced = new Set([...draft.stack, ...draft.capabilities, ...draft.userJourneys].flatMap(item => item.evidenceIds));
+  const evidence = [...inspection.evidence].sort((a, b) => Number(referenced.has(b.id)) - Number(referenced.has(a.id)));
+  const sourceExcerpts = [...(inspection.context ?? [])];
+  for (;;) {
+    const payload = redact(JSON.stringify({ draft, evidence, sourceExcerpts,
+      limits: { filesScanned: inspection.filesScanned, incomplete: inspection.truncated,
+        excerptCount: sourceExcerpts.length, omittedExcerpts: (inspection.context?.length ?? 0) - sourceExcerpts.length,
+        omittedEvidence: inspection.evidence.length - evidence.length,
+        omittedDraftClaims: model.stack.length + model.capabilities.length + model.userJourneys.length + model.unknowns.length
+          - draft.stack.length - draft.capabilities.length - draft.userJourneys.length - draft.unknowns.length } }));
+    if (Buffer.byteLength(payload) <= 240_000) return payload;
+    if (evidence.length && !referenced.has(evidence[evidence.length - 1]!.id)) evidence.pop();
+    else if (sourceExcerpts.length) sourceExcerpts.pop();
+    else throw new Error("Saved project details exceed the AI context limit. Shorten the project details or narrow the scan with .hypothraignore.");
+  }
+}
+
+export async function cleanupAnalysisDirectory(directory: string, remove: typeof rm = rm): Promise<boolean> {
+  const resolved = resolve(directory);
+  const normalize = (value: string) => process.platform === "win32" ? value.toLowerCase() : value;
+  if (normalize(dirname(resolved)) !== normalize(resolve(tmpdir())) || !/^hypothra-ai-[a-zA-Z0-9]+$/.test(basename(resolved))) {
+    throw new Error("AI temporary cleanup containment check failed.");
+  }
+  try {
+    await remove(resolved, { recursive: true, force: true, maxRetries: 5, retryDelay: 150 });
+    return true;
+  } catch {
+    // Windows or antivirus software may retain directory handles briefly.
+    // Best-effort cleanup must never replace the analysis result or its error.
+    return false;
+  }
 }
 
 export function validateAIResult(input: unknown, model: ProjectModel, inspection: Inspection): ProjectModel {
@@ -55,6 +86,8 @@ export function validateAIResult(input: unknown, model: ProjectModel, inspection
 }
 
 export async function analyzeWithCodex(model: ProjectModel, inspection: Inspection, executable: string): Promise<ProjectModel> {
+  // Validate and bound input before starting a child process or creating files.
+  const input = projectAnalysisInstructions + "\n\nUNTRUSTED PROJECT DATA:\n" + analysisPayload(model, inspection);
   const taskDir = await mkdtemp(join(tmpdir(), "hypothra-ai-"));
   try {
     const schemaPath = join(taskDir, "response-schema.json"), outputPath = join(taskDir, "response.json");
@@ -67,22 +100,27 @@ export async function analyzeWithCodex(model: ProjectModel, inspection: Inspecti
     const env = Object.fromEntries(Object.entries(process.env).filter(([key, value]) => value !== undefined && allowed.has(key.toUpperCase()))) as Record<string, string>;
     await new Promise<void>((done, reject) => {
       const child = spawn(executable, args, { cwd: taskDir, env, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
-      let bytes = 0, settled = false;
-      const finish = (error?: Error) => { if (settled) return; settled = true; clearTimeout(timer); if (error) { child.kill(); reject(error); } else done(); };
-      const timer = setTimeout(() => finish(new Error("AI analysis timed out. Your saved information was preserved; you can retry.")), 150_000);
-      const count = (chunk: Buffer) => { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) finish(new Error("AI output exceeded its size limit.")); };
+      let bytes = 0, settled = false, failure: Error | undefined, shutdownTimer: ReturnType<typeof setTimeout> | undefined;
+      const finish = (error?: Error) => { if (settled) return; settled = true; clearTimeout(timer); clearTimeout(shutdownTimer); if (error) reject(error); else done(); };
+      const abort = (error: Error) => {
+        if (failure || settled) return;
+        failure = error;
+        child.kill();
+        // Prefer close (all stdio handles released) before cleaning the working directory.
+        shutdownTimer = setTimeout(() => finish(error), 5000);
+      };
+      const timer = setTimeout(() => abort(new Error("AI analysis timed out. You can retry.")), 150_000);
+      const count = (chunk: Buffer) => { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) abort(new Error("AI output exceeded its size limit.")); };
       child.stdout.on("data", count); child.stderr.on("data", count);
-      child.once("error", () => finish(new Error("The Codex analysis engine could not be started.")));
-      child.once("close", code => finish(code === 0 ? undefined : new Error("The Codex analysis engine did not complete. Check that Codex is signed in and the account has available usage.")));
+      child.once("error", () => abort(new Error("The Codex analysis engine could not be started.")));
+      child.once("close", code => finish(failure ?? (code === 0 ? undefined : new Error("The Codex analysis engine did not complete. Check that Codex is signed in and the account has available usage."))));
       child.stdin.on("error", () => {});
-      child.stdin.end(projectAnalysisInstructions + "\n\nUNTRUSTED PROJECT DATA:\n" + analysisPayload(model, inspection));
+      child.stdin.end(input);
     });
     const output = await readFile(outputPath, "utf8");
     if (Buffer.byteLength(output) > 512 * 1024) throw new Error("AI result exceeded its size limit.");
     return validateAIResult(JSON.parse(output), model, inspection);
   } finally {
-    const resolved = resolve(taskDir);
-    if (!resolved.startsWith(resolve(tmpdir()) + (process.platform === "win32" ? "\\" : "/") + "hypothra-ai-")) throw new Error("AI temporary cleanup containment check failed.");
-    await rm(resolved, { recursive: true, force: true });
+    await cleanupAnalysisDirectory(taskDir);
   }
 }
