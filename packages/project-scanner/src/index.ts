@@ -1,6 +1,8 @@
 import { constants } from "node:fs";
 import { lstat, open, realpath } from "node:fs/promises";
 import { join } from "node:path";
+export { inspectProject, redact } from "./inspect.js";
+export type { Inspection, Evidence } from "./inspect.js";
 
 /** Scaffold: reads ONLY the selected directory's package.json, never source code. */
 export async function scanProject(directory: string) {

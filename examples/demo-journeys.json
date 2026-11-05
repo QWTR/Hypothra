@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "baseUrl": "http://127.0.0.1:4179/",
+  "environment": "local-test",
+  "journeys": [
+    {
+      "id": "desktop-signup",
+      "persona": "Desktop visitor responding to a route-planning ad (synthetic)",
+      "goal": "Create an account and save the first route",
+      "hypothesis": "A desktop visitor can reach the value promised by the advertisement.",
+      "capabilityIds": [],
+      "viewport": { "width": 1280, "height": 900 },
+      "denyPermissions": true,
+      "steps": [
+        { "action": "navigate", "path": "/", "stage": "landing" },
+        { "action": "expectText", "selector": "h1", "text": "Find a route", "stage": "landing" },
+        { "action": "navigate", "path": "/", "stage": "signup" },
+        { "action": "fill", "selector": "#email", "value": "desktop@example.invalid" },
+        { "action": "click", "selector": "#desktop-signup" },
+        { "action": "expectText", "selector": "#signup-status", "text": "Account created", "stage": "signup" },
+        { "action": "click", "selector": "#save-route" },
+        { "action": "expectText", "selector": "#route-status", "text": "Route saved", "stage": "activation" }
+      ]
+    },
+    {
+      "id": "mobile-signup",
+      "persona": "Mobile visitor arriving from TikTok (synthetic)",
+      "goal": "Create a test account on a phone-sized viewport",
+      "hypothesis": "A mobile visitor can register after seeing the ad. The fixture deliberately violates this hypothesis.",
+      "capabilityIds": [],
+      "viewport": { "width": 390, "height": 844 },
+      "denyPermissions": true,
+      "steps": [
+        { "action": "navigate", "path": "/", "stage": "landing" },
+        { "action": "expectText", "selector": "h1", "text": "Find a route", "stage": "landing" },
+        { "action": "navigate", "path": "/", "stage": "signup" },
+        { "action": "fill", "selector": "#email", "value": "mobile@example.invalid" },
+        { "action": "click", "selector": "#mobile-signup" },
+        { "action": "expectText", "selector": "#signup-status", "text": "Account created", "stage": "signup" }
+      ]
+    },
+    {
+      "id": "location-denied",
+      "persona": "Privacy-conscious visitor (synthetic)",
+      "goal": "Continue after declining location access",
+      "hypothesis": "The application offers manual entry when location permission is denied.",
+      "capabilityIds": [],
+      "viewport": { "width": 390, "height": 844 },
+      "denyPermissions": true,
+      "steps": [
+        { "action": "navigate", "path": "/", "stage": "landing" },
+        { "action": "click", "selector": "#location" },
+        { "action": "expectText", "selector": "#location-status", "text": "Enter your route manually", "stage": "activation" }
+      ]
+    }
+  ]
+}

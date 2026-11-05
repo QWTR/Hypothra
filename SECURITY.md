@@ -1,30 +1,71 @@
 # Security policy
 
-Hypothra v0.1.0 is experimental. Review it before exposing sensitive data.
+Hypothra v0.2.0 is experimental local tooling. Use disposable project copies,
+synthetic accounts, a test database, and mock payments. Do not run as administrator.
 
-## Current boundaries
+## Scanner and private files
 
-- The simulation core does arithmetic only and rejects unknown or invalid inputs.
-- The CLI reads a scenario only when you provide `--config`; JSON is parsed,
-  never evaluated. `init` writes one file and refuses to overwrite it.
-- `analyze` reads only an explicitly selected root manifest, up to 64 KiB.
-  It does not recurse, read environment files, execute scripts, or send data.
-- MCP exposes only `simulate_growth`, over local stdio. There is no HTTP listener,
-  filesystem tool, authentication service, or arbitrary command facility.
-- The runtime contains no telemetry or network calls. Dependencies are part of
-  the trusted computing base; installation and audits contact the registry.
-- Tool results are data. A future AI integration must not treat repository
-  content as instructions or silently transmit source files to a model provider.
+The scanner never imports or executes inspected code. It traverses an allowlist
+within a canonical root, rejects redirects and links, compares file identity,
+and applies limits: 1,500 text files, 8 MiB total source, 128 KiB per source file,
+32 KiB per README, 12 directory levels, and 12,000 entries. Generated/vendor trees,
+environment files, credential-like names, and common private key/database files
+are excluded. Root ignore files can narrow the scope further.
 
-These are application boundaries, not an OS sandbox or a defense against a
-malicious process modifying files concurrently. Do not run as administrator.
-Do not expose this stdio process through an unauthenticated network bridge.
-Use fixtures or copies for scanning until a broader scanner is reviewed.
+Findings contain selected structural declarations, labels, and references; source
+content remains untrusted data. Redaction is best-effort and does not guarantee
+that arbitrary hardcoded secrets can be recognized. Do not scan a repository
+being concurrently modified by an adversary. These checks are not an OS sandbox.
+
+`.hypothra/` contains project descriptions, source references, private reports,
+optional DOM inventories, and optional screenshots. Ignore it in the inspected
+project's Git configuration. Review any report before sharing it.
+
+## Approval and output
+
+Human approval records the exact model revision and source digest. Source,
+inspection, or model edits invalidate it. Refresh preserves a previous model and
+requires new review. Agents can propose changes but cannot approve a model.
+Journey-definition edits invalidate attached runtime evidence. Changes to experiment
+inputs make saved dashboard reports stale. These are local integrity checks, not
+cryptographic attestation against a malicious owner editing every artifact.
+
+The dashboard binds only to `127.0.0.1`, checks Host and Origin, requires an
+unpredictable session token for writes, caps request bodies, and escapes content.
+It exposes no arbitrary file or shell endpoint. Do not proxy it to the internet.
+
+## Browser experiments
+
+Only explicit `http://127.0.0.1:<port>/` or `http://[::1]:<port>/` origins are
+accepted. Browser contexts are fresh and do not inherit sign-ins. Requests to
+other origins and external redirects are blocked; service workers, downloads,
+popups, and WebSockets are blocked. Tests have step, request, and elapsed-time
+budgets. DOM discovery records controls and labels, not values or storage.
+
+This is a browser request boundary, not a network sandbox. Browser internals and
+the tested app's server are outside that boundary. A local app can send emails,
+write a real database, or contact a payment provider from its backend. Isolate
+those services before testing. Native mobile and production load testing are
+outside this release. A locally configured journey can submit synthetic forms.
+
+## Optional model and advertising integrations
+
+Scanning, review, and deterministic calculations require no external model.
+An explicit `enrich` or `plan-journeys` command with `--allow-upload` sends bounded,
+redacted summaries or DOM inventory to your configured endpoint. Remote endpoints
+must use HTTPS. Model output is schema/evidence checked and remains a draft.
+Review it; prompt-injection mitigation cannot guarantee semantic correctness.
+
+Read-only Meta/TikTok connectors use fixed HTTPS service endpoints, GET requests,
+header authentication, timeouts, response budgets, and no redirects. They cannot
+create, publish, modify, or buy campaigns. Partial reports and unverified metadata
+are rejected. Tokens belong in an ignored local environment file and are not
+included in reports. `.env` is read only when explicitly supplied via `--env-file`.
+Do not paste tokens into issues, prompts, or chat.
 
 ## Reporting
 
-Please use GitHub's private vulnerability reporting for this repository if that
-feature is enabled. Otherwise open an issue containing only a request for a
-private reporting channel, without exploit details, secrets, or private data.
-Do not include credentials in public issues. No response-time guarantee is made
-for this early project. Security fixes target the latest development version.
+Use GitHub private vulnerability reporting if enabled. Otherwise open an issue
+requesting a private channel without including exploit details, credentials, or
+private project data. Fixes target the latest development version; no response-time
+guarantee is made for this early project.

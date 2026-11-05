@@ -5,7 +5,9 @@ Discuss changes to model assumptions or filesystem access before implementation.
 
 ```sh
 npm ci --ignore-scripts
+npm run browser:install
 npm test
+npm run package:verify
 ```
 
 Use English for code, documentation, commits, and issues. Keep the simulation
@@ -17,7 +19,7 @@ Before opening a pull request, explain the problem, resulting behavior, validati
 and limitations. Never commit credentials, private project data, dependency trees,
 or generated build output. Lockfile changes belong with dependency changes.
 
-All workspaces are private until a deliberate release process is implemented.
+All workspaces and generated archives are private until deliberate npm publication.
 Do not publish packages or use a production project as a test fixture.
 
 Contributions are provided under the repository's MIT license. Treat other

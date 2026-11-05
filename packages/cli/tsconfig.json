@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
-  "references": [{ "path": "../simulation-core" }, { "path": "../project-scanner" }],
+  "references": [{ "path": "../simulation-core" }, { "path": "../project-scanner" }, { "path": "../product-lab" }],
   "include": ["src/**/*.ts"]
 }

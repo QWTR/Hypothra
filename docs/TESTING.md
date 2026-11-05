@@ -1,64 +1,74 @@
 # Testing Hypothra safely
 
-## Current automated checks
-
-Run `npm ci --ignore-scripts`, `npm run build`, then `npm test`. The test command
-also builds, so it is safe as the normal development check. Tests use Node's
-built-in runner against compiled code.
-
-1. **Engine:** compare two months against an independently hand-calculated case;
-   check month-one operation order, deterministic repetition, input immutability,
-   empty population, total churn, upper bounds, and invalid inputs.
-2. **CLI:** launch actual Node processes; check JSON output against the engine,
-   initialize a temporary folder with spaces, refuse overwrites, and reject
-   malformed, oversized, missing, or invalid files and unknown arguments.
-3. **MCP:** launch the actual stdio entry point with the official SDK client;
-   connect, discover the tool, invoke it twice, compare text and structured
-   results to the core, reject invalid inputs and nonexistent scanner tools,
-   and close the process. No AI host or paid model is needed for this layer.
-4. **Scanner scaffold:** create disposable manifests and secret sentinels; verify
-   dependency-only output, no arbitrary content exposure, and rejection of bad
-   files. File-symlink tests skip explicitly when OS privileges prevent creating
-   the fixture. The Linux CI job can run that case without Windows privileges.
-
-Fixtures live in task-specific OS temporary directories and are removed after
-each test. Do not point tests at production repositories, databases, or services.
-CI runs the same commands on Windows and Linux with Node 22 and 24.
-
-## Manual CLI check
+## Run the suite
 
 ```sh
-npm exec -- hypothra simulate --config examples/growth.scenario.json
-npm exec -- hypothra analyze packages/cli
+npm ci --ignore-scripts
+npm run browser:install
+npm test
+npm run package:verify
+npm audit
 ```
 
-Month one must report 1,069 active users, 1,069 USD revenue, 806.90 USD costs,
-and 262.10 USD profit. JSON numbers do not preserve trailing zeroes.
+`npm test` builds every workspace before running Node's test runner. Chromium is
+required: missing browser installation is a failure, not a silently skipped real
+browser test. CI installs browser dependencies and runs Windows/Linux on Node 22/24.
 
-## Next: a real MCP host
+## What is covered
 
-Use the local configuration in the README. Confirm that the host lists only
-`simulate_growth`, ask it to run the example's explicit assumptions, inspect the
-actual tool invocation, and compare the result to CLI output. Confirm that the
-host distinguishes supplied assumptions from measurements. Automated protocol
-tests do not establish that any specific host is configured or working.
+| Layer | Evidence |
+| --- | --- |
+| Legacy engine | Hand-calculated case, deterministic output, bounds, nonmutation |
+| Scanner | AST routes, screens, data declarations, ignores, secrets, binaries, size limits, junction containment |
+| Understanding | Editable claims, authentic evidence IDs, exact revision, source-change detection |
+| Launch | Independently calculated funnel, range ordering, budget checks, dated/matched sources |
+| Advertising data | CSV weighting and segmentation; mocked provider responses, errors, auth headers, metadata |
+| Browser | Actual Chromium: working desktop signup, deliberately failing mobile signup, permission denial, blocked external redirect |
+| CLI | Actual subprocesses through init, review, approval, browser execution, launch, report, and stale journey rejection |
+| MCP | Actual stdio client/server exchange; root scope, unavailable approval tools, proposals invalidating approval |
+| Dashboard | Actual HTTP API; write token, origin checks, saved inputs, stale report rejection |
+| Model adapter | Mocked compatible endpoint, explicit upload gate, evidence and hypothesis checks |
+| Journey planning | Actual rendered control inventory excludes values; mocked model proposals reject invented selectors and require consent |
+| Distribution | Archive installed in an independent temporary project, without monorepo runtime dependencies |
 
-Do not grant general shell or filesystem access to test this tool. The MCP server
-does not need access to a project, a secret, a cloud account, or an API key.
+The file-symlink test explicitly skips when OS privileges prevent creating its
+fixture. Directory-junction containment is tested separately. Linux can exercise
+the file-symlink case without Windows privileges.
 
-## Later: a real project scanner
+Provider and model tests use synthetic responses. They prove request and validation
+behavior; they do not establish that a particular live account, API version,
+reporting dimension combination, or local model is available.
 
-Start with generated fixtures, then a disposable copy of a consenting project.
-Include `.env`, nested dependencies, ignored files, symlinks, Windows junctions,
-oversized files, binary files, misleading scripts, and prompt-injection strings.
-Prove that reads stay within the allowed root and outputs exclude secrets before
-connecting the scanner to an agent. Separate observed code facts from inference.
-Never run discovered install scripts, tests, or application code automatically.
+## Manual example
 
-## Later: infrastructure experiments
+Run `npm run demo`. In the dashboard, inspect the product description and code
+references, open the experiment inputs, and follow the report link. Change the
+variant in the report: counts and financial outcomes must change consistently.
+Change the draft or launch inputs and verify the old report becomes stale.
 
-Use a throwaway local service with synthetic data and fixed CPU/memory budgets.
-Require explicit target authorization and request/time/concurrency caps, then
-record latency, throughput, errors, and environment. Do not infer a production
-user capacity from dependencies or business-model arithmetic. Production load
-tests and access changes require a separate, explicit request.
+The test product's mobile signup failure is deliberately included. It should be
+reported as a failure at signup while desktop signup and permission fallback pass.
+This expected application failure is a successful test of Hypothra's detection.
+
+## Live integration checks, when configured
+
+1. **AI host:** bind a disposable initialized root, inspect the advertised tools,
+   ask for a proposed correction, and confirm the host cannot approve the model.
+   Approve locally, run the scenario, and compare actual tool output to CLI JSON.
+2. **Model endpoint:** choose a compatible local server or authorized remote model,
+   inspect the outgoing summary, opt in, and confirm output is a reviewable draft.
+3. **Advertising accounts:** use read-only reporting permissions and a short known
+   date range; compare spend/impressions/currency/country/objective against an
+   account export. Verify CPM independently. Do not run any campaign mutation.
+4. **A real project:** start with a disposable copy, ignore `.hypothra/`, review
+   the scan omissions, correct understanding, and use synthetic backend services.
+
+## Browser boundaries
+
+Point journeys only at an isolated local service, never a production-backed app.
+Inspect form fields and values before running. A new browser context prevents
+inherited account sessions, but it does not isolate the application's own backend.
+The runner is not a penetration test or a production capacity benchmark.
+
+Do not convert a persona pass fraction into a real customer conversion rate.
+Report observed assertions separately from assumptions and hypotheses.

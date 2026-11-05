@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/simulation-core" },
     { "path": "packages/project-scanner" },
+    { "path": "packages/product-lab" },
     { "path": "packages/cli" },
     { "path": "packages/mcp-server" }
   ]

@@ -22,7 +22,7 @@ test("npm workspace command works offline without a published package", () => {
     encoding: "utf8", timeout: 10_000,
   });
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout.trim(), "0.1.0");
+  assert.equal(result.stdout.trim(), "0.2.0");
 });
 
 test("CLI init/config works in a directory with spaces and refuses overwrite", async () => {
@@ -56,10 +56,10 @@ test("CLI rejects malformed, oversized, missing, and invalid scenario files", as
 
 test("CLI help and version are available", () => {
   assert.match(run(["--help"]).stdout, /package\.json \(scanner scaffold\)/);
-  assert.equal(run(["--version"]).stdout.trim(), "0.1.0");
+  assert.equal(run(["--version"]).stdout.trim(), "0.2.0");
 });
 
-for (const args of [["unknown"], ["simulate", "--config"], ["simulate", "--oops"], ["analyze"], ["init", "extra"]]) {
+for (const args of [["unknown"], ["simulate", "--config"], ["simulate", "--oops"], ["analyze", "--oops"], ["init", "--oops"]]) {
   test(`CLI rejects arguments: ${args.join(" ")}`, () => {
     const result = run(args);
     assert.equal(result.status, 1);
@@ -68,7 +68,7 @@ for (const args of [["unknown"], ["simulate", "--config"], ["simulate", "--oops"
 }
 
 test("CLI analyze exercises manifest-only scanner", () => {
-  const result = run(["analyze", resolve("packages/cli")]);
+  const result = run(["analyze", resolve("packages/cli"), "--manifest"]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).status, "manifest-only-scaffold");
 });

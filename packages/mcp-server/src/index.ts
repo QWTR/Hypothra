@@ -3,7 +3,7 @@ import { serveStdio, StdioServerTransport } from "@modelcontextprotocol/server/s
 import { createServer } from "./server.js";
 
 // stdout belongs exclusively to the MCP protocol.
-serveStdio(createServer, {
-  transport: new StdioServerTransport(process.stdin, process.stdout, { maxBufferSize: 65_536 }),
+serveStdio(() => createServer(), {
+  transport: new StdioServerTransport(process.stdin, process.stdout, { maxBufferSize: 262_144 }),
   onerror: () => { console.error("Hypothra MCP transport error."); },
 });

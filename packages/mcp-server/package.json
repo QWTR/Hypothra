@@ -1,12 +1,29 @@
 {
   "name": "@hypothra/mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "type": "module",
-  "exports": { ".": { "types": "./dist/server.d.ts", "import": "./dist/server.js" } },
-  "bin": { "hypothra-mcp": "bin/hypothra-mcp.mjs" },
-  "files": ["bin", "dist"],
-  "dependencies": { "@hypothra/simulation-core": "0.1.0", "@modelcontextprotocol/server": "2.4.0", "zod": "4.6.7" },
-  "devDependencies": { "@modelcontextprotocol/client": "2.4.0" }
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "bin": {
+    "hypothra-mcp": "bin/hypothra-mcp.mjs"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "dependencies": {
+    "@hypothra/simulation-core": "0.2.0",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7",
+    "@hypothra/product-lab": "0.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0"
+  }
 }

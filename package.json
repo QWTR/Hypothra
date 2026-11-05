@@ -1,18 +1,33 @@
 {
   "name": "hypothra-workspace",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Reproducible software business simulations for developers and AI tools.",
   "license": "MIT",
   "type": "module",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=22" },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc -b",
     "pretest": "npm run build",
     "test": "node --test tests/*.test.mjs",
     "simulate": "node packages/cli/dist/index.js simulate",
-    "mcp": "node packages/mcp-server/dist/index.js"
+    "mcp": "node packages/mcp-server/dist/index.js",
+    "predemo": "npm run build",
+    "demo": "node scripts/demo.mjs",
+    "browser:install": "playwright install chromium",
+    "prepackage": "npm run build",
+    "package": "node scripts/package.mjs",
+    "prepackage:verify": "npm run package",
+    "package:verify": "node scripts/verify-package.mjs"
   },
-  "devDependencies": { "@types/node": "^24.0.0", "typescript": "7.0.2" }
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2",
+    "esbuild": "0.28.2"
+  }
 }

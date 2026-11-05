@@ -1,170 +1,249 @@
 # Hypothra
 
-**Don't guess what happens next. Simulate your assumptions.**
+**Understand the product. Challenge the launch. Test the path.**
 
-Hypothra is an open-source foundation for reproducible software business simulations.
-It turns explicit assumptions about acquisition, retention, subscriptions, and costs
-into inspectable results that developers and AI tools can reproduce.
+Hypothra is an open-source product laboratory for developers and AI agents.
+It connects evidence from a software project with an editable product model,
+an advertising launch scenario, and real browser checks against a local test app.
 
-Our mission is to make technical and business decisions easier to test before teams
-commit time and money. The long-term direction combines project analysis, calibrated
-models, and agent-accessible experiments. The first step is a small engine whose
-arithmetic can be checked by hand.
+Our mission is to make the journey from an advertisement's promise to a product's
+actual behavior inspectable before a team spends its launch budget.
 
-> **v0.1.0 is an early local foundation.** It contains a deterministic growth model,
-> a working CLI, a local MCP server exposing one simulation tool, and a manifest-only
-> scanner scaffold. It does not predict startup success, infer infrastructure capacity,
-> train an AI model, or run load tests.
+```text
+Project + your description
+          ↓
+Bounded source analysis → evidence, stack, screens, routes, data operations
+          ↓
+Editable understanding → your corrections → exact-revision approval
+          ↓
+Launch plan + dated advertising evidence + explicit conversion assumptions
+          ↓
+Synthetic personas → real local browser journeys → observed failures
+          ↓
+Interactive report: scenarios, evidence, uncertainties, and conditional bug impact
+```
 
-## Quickstart
+**v0.2.0 is a working local development release.** Source analysis is structural;
+semantic interpretation and AI-planned journeys are optional integrations. Price
+connectors require your own authorized advertising account. Personas are synthetic,
+and their reactions are hypotheses. A reproduced application error is runtime
+evidence. Neither layer proves future demand or a real conversion rate.
 
-Requires Node.js **22 or newer**, npm, and Git. PowerShell users can use `npm.cmd`
-if their execution policy blocks `npm.ps1`.
+## Try the complete example
+
+Requires Node.js **22+**, npm, and Git. On Windows, use `npm.cmd` when PowerShell
+blocks `npm.ps1`.
 
 ```sh
 git clone https://github.com/QWTR/Hypothra.git
 cd Hypothra
 npm ci --ignore-scripts
-npm run build
+npm run browser:install
 npm test
-npm run simulate
+npm run demo
 ```
 
-The workspace CLI is available after installation and build:
+The demo prints two local URLs:
+
+- `http://127.0.0.1:4317` — product review, experiment editing, and launch reports.
+- `http://127.0.0.1:4179` — a synthetic route-planning product.
+
+It scans an isolated copy under `work/demo-product`, approves **only that generated
+fixture**, and runs three real browser paths: desktop signup, deliberately broken
+mobile signup, and permission-denial fallback. The report shows how a failing
+signup path could invalidate an otherwise attractive advertising scenario.
+
+No real accounts, messages, advertisements, payments, or production services are
+involved. Stop the demo with Ctrl+C. The ports must be free.
+
+## Install Hypothra inside another project
+
+Build a portable npm package from the source checkout:
 
 ```sh
-npm exec -- hypothra --help
-npm exec -- hypothra init
-npm exec -- hypothra simulate --config hypothra.scenario.json
-npm exec -- hypothra analyze ./packages/cli
+npm run package
 ```
 
-`init` creates a JSON scenario in your current directory and refuses to overwrite
-an existing file. `simulate` without flags runs the built-in example. `analyze`
-reads only the selected directory's `package.json` and reports dependency names.
+Then, from a **disposable copy** of your project, install the explicit generated
+archive. Windows example:
 
-**Nothing has been published to npm.** These commands use local workspaces.
-Do not use bare `npx hypothra` to install this project: the public npm name is
-unverified and could belong to someone else. All packages are currently private
-to prevent accidental publishing; the source code is public under MIT.
-
-## A first experiment
-
-The example starts with 1,000 active users, spends 500 USD per month at a cost
-of 5 USD per acquired user, assumes 5% monthly churn and 2% organic growth,
-and converts 10% of active users to a 10 USD monthly subscription.
-
-Month one is deliberately easy to audit:
-
-```text
-Retained users  = 1,000 × (1 − 0.05)                    = 950
-Active users    = 950 × (1 + 0.02) + 500 / 5            = 1,069
-Paying users    = 1,069 × 0.10                         = 106.9
-Revenue         = 106.9 × 10                           = 1,069 USD
-Costs           = 500 + 200 + 1,069 × 0.10              = 806.90 USD
-Profit          = 1,069 − 806.90                        = 262.10 USD
+```powershell
+cd D:\MyTestProject
+npm.cmd install --save-dev D:\Hypothra\work\releases\hypothra-0.2.0.tgz --ignore-scripts
+npm.cmd exec --offline -- hypothra init . --description "What this product does and who it serves"
+npm.cmd exec --offline -- hypothra dashboard .
 ```
 
-Fractional users represent expected population sizes. This is a scenario model,
-not individual customer behavior. Rates stay constant, acquisition is immediate,
-and every month's active users are eligible for conversion. There are no taxes,
-refunds, annual plans, capacity constraints, or uncertainty distributions yet.
-All monetary inputs must use the same currency; no currency conversion occurs.
+The archive bundles Hypothra's internal workspaces and declares public runtime
+dependencies. It can be installed independently of the monorepo. Installation
+still needs npm registry access for those dependencies. Browser execution additionally
+needs Chromium; run `npm exec -- playwright install chromium` in the consumer project.
 
-Change one assumption in `hypothra.scenario.json`, rerun, and compare the JSON
-results. The output includes the model version and a copy of the assumptions.
-See [the model specification](docs/MODEL.md) for equations, bounds, and rounding.
+Nothing is published to npm. The generated package is marked private. Do not use
+bare `npx hypothra` as an installation shortcut: ownership of the public npm name
+has not been established.
+
+## A real project workflow
+
+Inside the source checkout you can use these same commands with an explicit project
+directory instead of `.`:
+
+```sh
+npm exec -- hypothra init . --description "A route planner with a paid premium tier"
+npm exec -- hypothra review .
+# Correct .hypothra/project.json or use the local dashboard.
+npm exec -- hypothra approve . --revision <hash-shown-by-review>
+npm exec -- hypothra launch .
+```
+
+The project model contains the description, audience, value proposition, technology
+stack, capabilities, user journeys, unknowns, and source evidence references.
+The user can correct it before approving. Source or model edits invalidate approval;
+`hypothra refresh` rescans and preserves the previous model for comparison.
+
+Initialization never executes the inspected project's scripts. It creates private
+working files under `.hypothra/` and keeps the legacy `hypothra.scenario.json`
+example available for v0.1 commands. Add `.hypothra/` to your own project's ignore
+file before sharing that project.
+
+### Make the understanding model-assisted
+
+Two paths are available:
+
+1. Bind the MCP server to the initialized project. Your existing AI host can read
+   evidence and propose a corrected model. It cannot approve that model for you.
+2. Explicitly call a compatible chat-completions endpoint:
+
+```sh
+hypothra enrich . --endpoint http://127.0.0.1:11434/v1/chat/completions --model <your-installed-model> --allow-upload
+```
+
+This example assumes you separately run a compatible local model server; Hypothra
+does not install a model or claim one is running. Remote endpoints require HTTPS,
+a locally configured token, and the same explicit upload flag. Only the sanitized,
+bounded evidence and draft are sent, never the raw project tree. Redaction is
+best-effort; inspect the data and provider terms before opting in.
+
+### Define and test the launch
+
+Edit `.hypothra/launch.json` with your total budget, fixed costs, audience, creative,
+advertising allocation, pricing, and ranges for CTR, signup, activation, and payment.
+Map each advertisement's promise to product capability IDs.
+
+Advertising observations live in `.hypothra/benchmarks.json`. Each records its
+platform, country, currency, objective, price range, source, and observation dates.
+Generated prices are clearly marked **synthetic assumptions**. CSV imports and
+read-only Meta/TikTok adapters can replace them with your own observed data.
+Old or mismatched measured evidence is rejected. See [advertising data](docs/AD-DATA.md).
+
+For a local test version of your app:
+
+```sh
+hypothra discover . --url http://127.0.0.1:5173/
+# Write journeys from the observed selectors, or ask an explicitly configured model:
+hypothra plan-journeys . --endpoint <chat-completions-url> --model <name> --allow-upload
+# Review journeys.proposed.json, then adopt its approved contents as journeys.json.
+hypothra journeys . --screenshots
+hypothra launch . --with-runtime
+```
+
+Discovery reads rendered controls without capturing their input values. Model
+proposals must use discovered selectors and paths. Planning never executes the
+proposed interactions. Browser tests use new isolated Chromium contexts and an
+explicit loopback origin. They do not yet automate native Android or iOS apps.
+
+## What the launch report means
+
+The funnel calculates impressions, clicks, signups, activation, paying users,
+first subscription-month revenue, service costs, and profit for three assumption
+combinations. Expected counts can be fractional. These ranges are not statistical
+confidence intervals. Creative text does not magically determine a conversion rate.
+
+A channel can be mapped to a tested journey. If signup fails, the report preserves
+the original assumed funnel and adds a **conditional impact scenario**: what if
+every visitor takes that same failing path? It never turns a few synthetic personas
+into a claimed population conversion measurement.
+
+JSON, Markdown, and standalone interactive HTML reports are saved under `.hypothra/`.
+The dashboard refuses to present stale reports as current after inputs change.
 
 ## Architecture
 
-```text
-Developer ── CLI ───────────────┐
-                               ├── simulation-core ── deterministic JSON result
-AI host ── MCP (local stdio) ───┘
+| Workspace | Responsibility |
+| --- | --- |
+| `@hypothra/project-scanner` | Bounded, read-only structural inspection and evidence |
+| `@hypothra/product-lab` | Understanding, approval, ads, launch scenarios, browser tests, optional AI, reports, dashboard |
+| `@hypothra/simulation-core` | Original pure deterministic growth engine |
+| `@hypothra/cli` | Commands for source and independently installed packages |
+| `@hypothra/mcp-server` | Project-scoped tools for compatible AI hosts |
 
-Developer ── CLI analyze ── project-scanner ── package.json dependency inventory
-```
+See [architecture](docs/ARCHITECTURE.md), [user guide](docs/USER-GUIDE.md),
+[changing the code](docs/DEVELOPMENT.md), and [testing](docs/TESTING.md).
 
-| Workspace | Responsibility | Current status |
-| --- | --- | --- |
-| `@hypothra/simulation-core` | Pure validation and simulation arithmetic | Working deterministic growth model |
-| `@hypothra/cli` | Local commands and explicit JSON file input | `init`, `simulate`, `analyze`, help, version |
-| `@hypothra/mcp-server` | Agent-facing tool interface | Working `simulate_growth` tool over stdio |
-| `@hypothra/project-scanner` | Bounded project inventory | Scaffold: root manifest only |
+## MCP configuration
 
-The core has no runtime dependencies and performs no I/O. CLI and MCP use the
-same core; the agent does not invent the arithmetic. There is no LLM API dependency,
-cloud service, database, telemetry, or API key requirement.
-
-See [architecture](docs/ARCHITECTURE.md) and [contributing](CONTRIBUTING.md).
-
-## Connect an MCP host
-
-Build first, then add a local stdio server to a compatible host's MCP configuration.
-For the default Windows checkout:
+Example for the source checkout:
 
 ```json
 {
   "mcpServers": {
     "hypothra": {
       "command": "node",
-      "args": ["D:/Hypothra/packages/mcp-server/dist/index.js"]
+      "args": ["D:/Hypothra/packages/mcp-server/dist/index.js"],
+      "env": { "HYPOTHRA_PROJECT_ROOT": "D:/MyTestProject" }
     }
   }
 }
 ```
 
-Replace the path for a different checkout. The host must be able to find `node`;
-use the full executable path if necessary. Host-specific settings and support vary.
-This repository does not modify your agent settings automatically.
+Without a root, only legacy `simulate_growth` is exposed. A bound initialized root
+adds `get_project_understanding`, `propose_project_understanding`, and
+`simulate_product_launch`. Set `HYPOTHRA_ALLOW_BROWSER=1` explicitly to additionally
+expose test-page discovery, journey proposals, and execution of the active local
+journeys. Browser access is off by default. No approval or shell-execution tool exists.
 
-The only exposed tool is `simulate_growth`. It accepts all fields from
-[`examples/growth.scenario.json`](examples/growth.scenario.json) as tool arguments
-and returns text JSON plus structured content. It cannot scan your disk, execute
-commands, make requests, or edit files. Protocol output is reserved for stdout.
-The implementation follows the [official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk).
+The [official MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+handles stdio transport. Actual configuration in a specific AI host is a separate
+validation step; protocol integration tests do not imply your host is connected.
 
-## Testing and security
+## Security, testing, and limits
 
 ```sh
-npm test         # builds all workspaces, then runs unit and process integration tests
-npm audit        # checks installed dependency advisories; requires registry access
+npm test                 # builds, then runs unit/process/MCP/real Chromium checks
+npm run package:verify   # installs the archive in an independent disposable project
+npm audit
 ```
 
-Tests cover a hand-calculated reference case, repeatability, validation bounds,
-real CLI processes, non-overwriting initialization, bounded scanner fixtures,
-and a real MCP client/server exchange over stdio. No paid APIs or production
-projects are involved. [Testing guide](docs/TESTING.md) explains the next layers.
+CI runs Windows and Linux with Node 22 and 24. The scanner applies file, byte,
+depth, and entry budgets, skips secrets and links, and honors root `.gitignore`
+and `.hypothraignore` rules. JavaScript/TypeScript AST extraction, basic Python
+routes, Prisma declarations, HTML/CSS, and selected manifests are supported;
+dynamic behavior and arbitrary frameworks require review.
 
-Runtime simulations have no network access in their implementation. Installation
-and dependency audits contact npm; `--ignore-scripts` prevents dependency lifecycle
-scripts during installation. MCP accepts bounded numeric inputs only and exposes
-no filesystem tool. The scanner is deliberately limited to a single manifest and
-does not read `.env`, recurse into source, or run package scripts. Manifest contents
-are untrusted data. These checks are not an operating-system sandbox: scan copies
-or fixtures, not directories being actively modified by an adversary.
-
-See [SECURITY.md](SECURITY.md) for the threat boundaries and vulnerability reporting.
+The default workflow makes no model or advertising-account requests. Optional
+integrations require explicit commands and local credentials. Browser routing
+limits requests to the chosen test origin, but the test application's backend can
+still perform its own side effects. Use synthetic data and isolated services.
+Screenshots may contain whatever you put in that test app and remain local.
+Read [SECURITY.md](SECURITY.md) before using sensitive projects.
 
 ## Roadmap
 
-- [x] Deterministic growth model with explicit assumptions and bounded inputs
-- [x] TypeScript npm workspaces, CLI, unit tests, and process integration tests
-- [x] Local MCP transport with one working simulation tool
-- [x] Manifest-only project scanner scaffold
-- [ ] Scenario comparison, sensitivity analysis, and versioned result files
-- [ ] Seeded stochastic models with documented distributions and calibration
-- [ ] Scanner allowlists, ignore rules, AST extraction, and provenance for findings
-- [ ] Explicitly authorized load testing against isolated local fixtures
-- [ ] Host-level MCP validation in a real AI client
-- [ ] Package-name checks, release automation, and an intentional first npm release
-- [ ] Optional model-assisted interpretation with opt-in data sharing
-
-Features on the roadmap are not implemented capabilities. Real infrastructure
-claims will require measurements from controlled benchmarks.
+- [x] Source evidence, editable understanding, and exact-revision approval
+- [x] Launch funnel with explicit budgets, creatives, source dates, and assumptions
+- [x] CSV cost import and optional read-only account connectors
+- [x] Real local browser journeys, DOM discovery, and observed failure reporting
+- [x] Optional model-assisted interpretation and validated journey proposals
+- [x] Local dashboard, interactive reports, scoped MCP tools, and portable archive
+- [ ] Broader framework parsers and nested ignore semantics
+- [ ] Calibrated response models and seeded stochastic experiments
+- [ ] Native mobile automation and separately authorized staging environments
+- [ ] Live account/provider validation and AI-host-specific compatibility matrix
+- [ ] Intentional npm publication after package-name and release review
+- [ ] Infrastructure benchmarks against isolated services
 
 ## License
 
-[MIT](LICENSE). We chose a short, permissive license to make the initial engine
-easy to study, reuse, and contribute to. Third-party dependencies retain their
-own licenses. No trademark or package-name availability claim is made.
+[MIT](LICENSE): a short, permissive starting point for reuse and contributions.
+Dependencies retain their own licenses. No trademark, domain, or npm-name
+availability claim is made.

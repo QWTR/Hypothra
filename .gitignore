@@ -10,3 +10,4 @@ coverage/
 Thumbs.db
 .hypothra/
 *.tgz
+work/
