@@ -6,6 +6,7 @@ import { inspectProject, scanProject } from "@hypothra/project-scanner";
 import { approveProject, benchmarksSchema, enrichUnderstanding, fetchAccountCosts, importCostCsv, initializeProject,
   projectStatus, readJson, refreshProject, reviewProject, runLaunch, runProjectJourneys, saveExperimentFile,
   saveProjectDraft, startDashboard, workspace, inspectTestPage, readProjectContext, suggestJourneys, withLock, writeArtifact, findPublicPrices, fillProjectWithAI, disableAutomaticAnalysis } from "@hypothra/product-lab";
+import { prepareRehearsal, readRehearsal, resumeRehearsal, waitForRehearsal, configureExperience, pauseRehearsal } from "@hypothra/product-lab";
 
 const help = `Hypothra 0.2.0 — understand your product and test a launch
 
@@ -18,6 +19,11 @@ Usage:
   hypothra approve [directory] --revision <hash>
   hypothra refresh [directory]           Rescan; preserve previous model and invalidate approval
   hypothra dashboard [directory] [--port 4317]
+  hypothra rehearse prepare [directory] [--idea "Reel concept"] [--constraints "Budget / audience"]
+    [--viewers 20] [--currency PLN] [--max-ai-calls 100]
+  hypothra rehearse run [directory] [--max-ai-calls 100]
+  hypothra rehearse status [directory]
+  hypothra rehearse experience [directory] --url http://127.0.0.1:3000/ --users 5 --synthetic-test-data
   hypothra launch [directory] [--with-runtime]
   hypothra journeys [directory] [--screenshots]
   hypothra discover [directory] --url http://127.0.0.1:4179/
@@ -111,6 +117,29 @@ async function main(args: string[]) {
     const options = flags(rest, ["port"]);
     const dashboard = await startDashboard(options.hasDirectory ? options.directory : undefined, options.values.has("port") ? Number(options.required("port")) : 4317);
     console.log(`Hypothra local dashboard: ${dashboard.url}`); return;
+  }
+  if (command === "rehearse") {
+    const [operation, ...arguments_] = rest;
+    const names = operation === "prepare" ? ["idea", "constraints", "viewers", "currency", "max-ai-calls"] : operation === "run" ? ["max-ai-calls"] : operation === "experience" ? ["url", "users"] : [];
+    const options = flags(arguments_, names, operation === "experience" ? ["synthetic-test-data"] : []);
+    if (operation === "status") return json(await readRehearsal(options.directory));
+    if (operation === "prepare") {
+      await prepareRehearsal(options.directory, { idea: options.values.get("idea") ?? "", constraints: options.values.get("constraints") ?? "",
+        viewers: Number(options.values.get("viewers") ?? 20), currency: options.values.get("currency") ?? "PLN", maxAICalls: Number(options.values.get("max-ai-calls") ?? 100) });
+      return json(await waitForRehearsal(options.directory));
+    }
+    const state = await readRehearsal(options.directory);
+    if (!state) throw new Error("Prepare an AI launch plan first.");
+    if (operation === "experience") return json(await configureExperience(options.directory, state.id, { baseUrl: options.required("url"), users: Number(options.required("users")), syntheticTestData: options.values.has("synthetic-test-data") }));
+    if (operation !== "run") throw new Error("Use rehearse prepare, run, status, or experience.");
+    const pause = () => { void pauseRehearsal(options.directory, state.id).then(result => console.error(result.message)); };
+    process.once("SIGINT", pause);
+    try {
+      await resumeRehearsal(options.directory, state.id, options.values.has("max-ai-calls") ? { maxAICalls: Number(options.required("max-ai-calls")) } : {});
+      const result = await waitForRehearsal(options.directory); json(result);
+      if (result?.status === "failed") process.exitCode = 1;
+    } finally { process.removeListener("SIGINT", pause); }
+    return;
   }
   if (command === "enrich") {
     const options = flags(rest, ["endpoint", "model", "env-file"], ["allow-upload"]);

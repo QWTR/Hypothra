@@ -4,7 +4,7 @@
 
 Hypothra is an open-source product laboratory for developers and AI agents.
 It connects evidence from a software project with an editable product model,
-an advertising launch scenario, and real browser checks against a local test app.
+an AI-generated virtual audience, and real AI-directed browser visits to a local test app.
 
 Our mission is to make the journey from an advertisement's promise to a product's
 actual behavior inspectable before a team spends its launch budget.
@@ -16,11 +16,13 @@ Bounded source analysis → evidence, stack, screens, routes, data operations
           ↓
 Editable understanding → your corrections → exact-revision approval
           ↓
-Launch plan + dated advertising evidence + explicit conversion assumptions
+AI-proposed costs, audience segments and reel script + published ad-price references
           ↓
-Synthetic personas → real local browser journeys → observed failures
+Individual AI viewers → watch / click / try decisions, each with a saved reason
           ↓
-Interactive report: scenarios, evidence, uncertainties, and conditional bug impact
+Interested AI visitors → real local browser actions → observed failures + synthetic opinions
+          ↓
+Optimization recommendations, evidence, exact counts and saved launch variants
 ```
 
 **v0.2.0 is a working local development release.** Initialization automatically asks
@@ -30,6 +32,12 @@ ad costs can be read from the public web without a Meta/TikTok account or API ke
 Your own account history remains an optional additional source. Personas are synthetic,
 and their reactions are hypotheses. A reproduced application error is runtime
 evidence. Neither layer proves future demand or a real conversion rate.
+
+The primary launch workflow no longer asks for CTR or signup percentages. AI fills
+the plan, then evaluates each requested viewer individually in resumable batches.
+Targets up to **100,000 viewers** and **5,000 local browser visitors** are accepted;
+only actually completed records count. A large target can require thousands of model
+requests and considerable account usage. The default is a 20-person pilot.
 
 ## Try the complete example
 
@@ -79,6 +87,13 @@ the panel, with drive buttons, parent navigation, and an editable path. No deskt
 popup is required. No project is scanned before
 you select it. A private `.hypothra/.gitignore` keeps analysis artifacts out of Git.
 
+In step 2, choose **Let AI prepare my virtual launch**. A reel idea and budget
+constraints are optional. Review or edit the AI's script, audience, costs and
+published price references, then start the audience. Pause/resume and inspect
+individual decisions at any point. Step 3 can send interested synthetic installers
+through a deliberately selected local app with dummy data. Step 4 recommends
+marketing and product changes with evidence. See [AI rehearsal](docs/AI-REHEARSAL.md).
+
 ## Optional: install the CLI inside a project
 
 Build a portable npm package from the source checkout:
@@ -116,7 +131,8 @@ npm exec -- hypothra init .
 npm exec -- hypothra review .
 # Correct .hypothra/project.json or use the local dashboard.
 npm exec -- hypothra approve . --revision <hash-shown-by-review>
-npm exec -- hypothra launch .
+npm exec -- hypothra rehearse prepare . --viewers 20 --max-ai-calls 100
+npm exec -- hypothra rehearse run . --max-ai-calls 100
 ```
 
 The project model contains the description, audience, value proposition, technology
@@ -130,6 +146,9 @@ project field before approving. Source or model edits invalidate approval;
 Initialization never executes the inspected project's scripts. It creates private
 working files under `.hypothra/`, with a local ignore file, and keeps the legacy
 `hypothra.scenario.json` example available for v0.1 CLI commands.
+
+The deterministic `launch` and `simulate` commands remain available as advanced
+comparison tools. Their assumed funnels are separate from the AI viewer engine.
 
 ### Automatic AI understanding
 
@@ -204,7 +223,7 @@ proposals must use discovered selectors and paths. Planning never executes the
 proposed interactions. Browser tests use new isolated Chromium contexts and an
 explicit loopback origin. They do not yet automate native Android or iOS apps.
 
-## What the launch report means
+## Advanced deterministic report
 
 The funnel calculates impressions, clicks, signups, activation, paying users,
 first subscription-month revenue, service costs, and profit for three assumption
@@ -224,7 +243,7 @@ The dashboard refuses to present stale reports as current after inputs change.
 | Workspace | Responsibility |
 | --- | --- |
 | `@hypothra/project-scanner` | Bounded, read-only structural inspection and evidence |
-| `@hypothra/product-lab` | Understanding, approval, ads, launch scenarios, browser tests, optional AI, reports, dashboard |
+| `@hypothra/product-lab` | Understanding, approval, AI audience jobs, AI browser visitors, ads, legacy scenarios, reports and dashboard |
 | `@hypothra/simulation-core` | Original pure deterministic growth engine |
 | `@hypothra/cli` | Commands for source and independently installed packages |
 | `@hypothra/mcp-server` | Project-scoped tools for compatible AI hosts |
@@ -283,6 +302,12 @@ Screenshots may contain whatever you put in that test app and remain local.
 Read [SECURITY.md](SECURITY.md) before using sensitive projects.
 
 ## Roadmap
+
+- [x] AI-proposed creative, audience, budget and costs without conversion forms
+- [x] Individual AI viewer decisions, exact counts, request caps and resumable jobs
+- [x] AI-directed local browser visitors, observed evidence and optimization recommendations
+- [ ] Real-video/audio interpretation and empirical calibration against small real campaigns
+- [ ] Native mobile exploration and separate concurrent load tests
 
 - [x] Source evidence, editable understanding, and exact-revision approval
 - [x] Launch funnel with explicit budgets, creatives, source dates, and assumptions

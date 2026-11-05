@@ -1,5 +1,10 @@
 # Using Hypothra
 
+The primary launch workflow now uses an AI audience rather than owner-entered
+conversion percentages. Follow [AI virtual launch](AI-REHEARSAL.md) for automatic
+planning, individual viewer decisions, local AI browser visitors and optimization.
+The manual funnel and scripted checks below remain under Advanced in the panel.
+
 ## 1. Start with the example
 
 From the source checkout:

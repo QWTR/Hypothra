@@ -9,8 +9,10 @@ import { dashboardHtml } from "./dashboard-view.js";
 import { findPublicPrices } from "./public-prices.js";
 import { queueAutomaticAnalysis, readAIStatus } from "./auto-ai.js";
 import { listProjectFolders } from "./folder-picker.js";
+import { readRehearsal, prepareRehearsal, resumeRehearsal, pauseRehearsal, configureExperience, editRehearsalPlan, readRehearsalRecords, mediaCostReference, rehearsalWorkerState, rehearsalHistory } from "./rehearsal.js";
+import type { RehearsalDependencies } from "./rehearsal.js";
 
-export async function startDashboard(initialDirectory?: string, port = 4317, options: { autoAI?: boolean } = {}) {
+export async function startDashboard(initialDirectory?: string, port = 4317, options: { autoAI?: boolean; rehearsal?: RehearsalDependencies } = {}) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid dashboard port.");
   let currentDirectory = initialDirectory ? await realpath(initialDirectory) : null;
   if (currentDirectory) {
@@ -31,6 +33,11 @@ export async function startDashboard(initialDirectory?: string, port = 4317, opt
       if (request.method === "GET" && path === "/") { response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); response.end(dashboardHtml(token)); return; }
       if (request.method === "GET" && path === "/api/state") return json(200, directory ? { ...await projectStatus(directory), projectRoot: directory } : { status: "choose-project", projectRoot: null });
       if (request.method === "GET" && path === "/api/ai/status" && directory) return json(200, await readAIStatus(directory));
+      if (request.method === "GET" && path === "/api/rehearsal/status") {
+        const rehearsal = directory ? await readRehearsal(directory) : null;
+        return json(200, { projectRoot: directory, rehearsal, mediaCosts: rehearsal ? mediaCostReference(rehearsal) : [], worker: directory ? await rehearsalWorkerState(directory) : "idle" });
+      }
+      if (request.method === "GET" && path === "/api/rehearsal/history") return json(200, directory ? await rehearsalHistory(directory) : []);
       if (request.method === "GET" && path === "/report") {
         if (!directory) return json(404, { error: "Choose a project folder first." });
         const state = await projectStatus(directory);
@@ -76,6 +83,12 @@ export async function startDashboard(initialDirectory?: string, port = 4317, opt
       if (path === "/api/journeys" && body.runLocalTest === true) return json(200, await runProjectJourneys(directory));
       if (path === "/api/public-prices" && typeof body.currency === "string") return json(200, await findPublicPrices(body.currency));
       if (path === "/api/ai/analyze" && body.reanalyze === true) return json(202, await queueAutomaticAnalysis(directory, { force: true }));
+      if (path === "/api/rehearsal/prepare") return json(202, await prepareRehearsal(directory, body.input, options.rehearsal));
+      if (path === "/api/rehearsal/resume") return json(202, await resumeRehearsal(directory, String(body.runId), { ...options.rehearsal, ...(typeof body.maxAICalls === "number" ? { maxAICalls: body.maxAICalls } : {}) }));
+      if (path === "/api/rehearsal/pause") return json(200, await pauseRehearsal(directory, String(body.runId)));
+      if (path === "/api/rehearsal/plan") return json(200, await editRehearsalPlan(directory, String(body.runId), body.plan));
+      if (path === "/api/rehearsal/experience") return json(200, await configureExperience(directory, String(body.runId), body.input));
+      if (path === "/api/rehearsal/records" && typeof body.batch === "number") return json(200, await readRehearsalRecords(directory, String(body.runId), body.batch));
       return json(404, { error: "Unknown operation." });
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Operation failed.";

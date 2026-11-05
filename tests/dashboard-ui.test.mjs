@@ -35,6 +35,7 @@ test("friendly panel completes product correction, public price selection, app c
     assert.equal((await projectStatus(root)).model.project.description, "Corrected: drivers can save their favorite routes.");
     await page.locator("#approve").click();
     await page.locator("#status").filter({ hasText: "Product confirmed" }).waitFor();
+    await page.locator("#manual-launch > summary").click();
     await page.getByLabel("Total budget", { exact: true }).fill("3500");
     await page.getByLabel("Which app check matches this ad?").selectOption("mobile-signup");
     await page.getByRole("button", { name: "Find published prices", exact: true }).click();
@@ -48,10 +49,12 @@ test("friendly panel completes product correction, public price selection, app c
     const saved = await projectStatus(root);
     assert.equal(saved.plan.totalBudget, 3500); assert.equal(saved.plan.channels[0].benchmarkId, "published-tiktok");
     await page.getByRole("button", { name: "Continue to app checks", exact: true }).click();
+    await page.locator("#scripted-checks > summary").click();
     await page.getByRole("button", { name: "Run app checks", exact: true }).click();
     await page.locator("#status").filter({ hasText: "App checks finished" }).waitFor({ timeout: 30_000 });
     assert.equal(await page.locator("#journey-list").getByText("Needs attention", { exact: true }).count(), 1);
     await page.getByRole("button", { name: "Continue to results", exact: true }).click();
+    await page.locator("#manual-results > summary").click();
     await page.getByRole("button", { name: "Calculate launch scenario", exact: true }).click();
     await page.locator("#status").filter({ hasText: "Your launch scenario is ready" }).waitFor();
     assert.equal(await page.locator("#result-cards .card").count(), 4);

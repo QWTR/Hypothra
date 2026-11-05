@@ -3,6 +3,7 @@ import { z } from "zod";
 import { numericLimits, simulateGrowth } from "@hypothra/simulation-core";
 import { benchmarksSchema, digestSchema, launchPlanSchema, projectModelSchema, readProjectContext,
   runProjectJourneys, saveProjectDraft, simulateLaunch, inspectTestPage, journeysSchema, withLock, writeArtifact, findPublicPrices } from "@hypothra/product-lab";
+import { readRehearsal, rehearsalHistory, readRehearsalRecords } from "@hypothra/product-lab";
 
 const bounded = (key: keyof typeof numericLimits) => {
   const [min, max] = numericLimits[key];
@@ -34,6 +35,16 @@ export function createServer(options: { projectRoot?: string; allowBrowser?: boo
   const root = options.projectRoot ?? process.env.HYPOTHRA_PROJECT_ROOT;
   const result = (value: object) => ({ content: [{ type: "text" as const, text: JSON.stringify(value) }], structuredContent: value });
   if (root) {
+    server.registerTool("get_virtual_launch", {
+      description: "Read saved AI audience judgments, exact completed counts, launch assumptions and browser evidence from the bound project. Synthetic intent is not measured marketing conversion. Does not start AI calls or browser actions.",
+      inputSchema: z.object({}).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async () => result({ rehearsal: await readRehearsal(root), history: await rehearsalHistory(root) }));
+    server.registerTool("get_virtual_audience_batch", {
+      description: "Inspect one saved batch of individual synthetic audience decisions from the current run. Returns actual recorded decisions only, never extrapolated people. No arbitrary file path is accepted.",
+      inputSchema: z.object({ runId: z.string().uuid(), batch: z.number().int().min(0).max(100000) }).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async input => result(await readRehearsalRecords(root, input.runId, input.batch)));
     server.registerTool("research_ad_costs", {
       description: "Read published Meta and TikTok ad cost benchmarks from a public web page. No Meta/TikTok account or API token is needed. Returns source URLs, source period, global scope, and optional dated public currency conversion. Use these as planning references, not guaranteed local promotion quotes.",
       inputSchema: z.object({ currency: z.string().regex(/^[A-Z]{3}$/).default("USD") }).strict(),

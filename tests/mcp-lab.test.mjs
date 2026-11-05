@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/client/stdio";
-import { approveProject, defaultLaunch, exampleBenchmarks, initializeProject, runLaunch } from "@hypothra/product-lab";
+import { approveProject, defaultLaunch, exampleBenchmarks, initializeProject, runLaunch, prepareRehearsal, waitForRehearsal, resumeRehearsal } from "@hypothra/product-lab";
+import { fakeInference, prices } from "./rehearsal-fixture.mjs";
 
 test("bound MCP host reads evidence and proposes corrections but cannot approve or access arbitrary paths", { timeout: 30_000 }, async () => {
   const root = await mkdtemp(join(tmpdir(), "hypothra-mcp-lab-"));
@@ -17,7 +18,9 @@ test("bound MCP host reads evidence and proposes corrections but cannot approve 
       env: { ...getDefaultEnvironment(), HYPOTHRA_PROJECT_ROOT: root }, stderr: "pipe" });
     await client.connect(transport);
     const names = (await client.listTools()).tools.map(tool => tool.name);
-    assert.deepEqual(names, ["simulate_growth", "research_ad_costs", "get_project_understanding", "propose_project_understanding", "simulate_product_launch"]);
+    assert.deepEqual(names, ["simulate_growth", "get_virtual_launch", "get_virtual_audience_batch", "research_ad_costs", "get_project_understanding", "propose_project_understanding", "simulate_product_launch"]);
+    const empty = await client.callTool({ name: "get_virtual_launch", arguments: {} });
+    assert.equal(empty.structuredContent.rehearsal, null);
     assert.ok(!names.some(name => /approve|shell|browser|ads/.test(name)));
     const context = await client.callTool({ name: "get_project_understanding", arguments: {} });
     assert.equal(context.structuredContent.revision, init.revision);
@@ -29,6 +32,15 @@ test("bound MCP host reads evidence and proposes corrections but cannot approve 
     const simulation = await client.callTool({ name: "simulate_product_launch", arguments: { plan, benchmarks } });
     assert.ok(!simulation.isError);
     assert.equal(simulation.structuredContent.totals[1].clicks, 1000);
+    const deps = fakeInference();
+    await prepareRehearsal(root, { viewers: 4 }, { infer: deps.infer, prices });
+    const ready = await waitForRehearsal(root);
+    await resumeRehearsal(root, ready.id, deps); await waitForRehearsal(root);
+    const saved = await client.callTool({ name: "get_virtual_launch", arguments: {} });
+    assert.equal(saved.structuredContent.rehearsal.audience.evaluated, 4);
+    const records = await client.callTool({ name: "get_virtual_audience_batch", arguments: { runId: ready.id, batch: 0 } });
+    assert.equal(records.structuredContent.viewers.length, 4);
+    assert.equal((await client.callTool({ name: "get_virtual_audience_batch", arguments: { runId: ready.id, batch: 0, path: "C:/private" } })).isError, true);
     const model = structuredClone(init.model);
     model.project.description = "Owner correction drafted by the host";
     const proposed = await client.callTool({ name: "propose_project_understanding", arguments: { expectedRevision: init.revision, model } });

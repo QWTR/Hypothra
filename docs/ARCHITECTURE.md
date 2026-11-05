@@ -21,6 +21,10 @@ simulation-core ────────────────► CLI / MCP se
 - `understanding.ts`: structural draft, evidence validation, and review summary.
 - `workflow.ts`: initialization, approval, stale-state checks, artifacts, and orchestration.
 - `launch.ts`: deterministic funnel arithmetic and conditional bug-impact scenarios.
+- `rehearsal.ts` / `rehearsal-schema.ts`: primary AI-first launch planning, per-person decisions, exact accounting, request limits, atomic batch/archive recovery, pause/resume and revision checks.
+- `inference.ts`: bounded structured model calls through the signed-in Codex or configured compatible endpoint, with reported token accounting.
+- `experience-agent.ts`: sequential AI-directed real browser visits for evaluated installers; inventories, dummy inputs, action checks and separate runtime evidence.
+- `rehearsal-view.ts` / `rehearsal-client.ts`: optional-idea setup, AI-filled editable plan, progress, decision inspection and optimization UI.
 - `ads.ts`: normalized CSV import and optional read-only account reporting adapters.
 - `public-prices.ts`: public benchmark extraction and dated currency conversion; no ad credentials.
 - `journeys.ts`: explicit local browser actions, assertions, and recorded observations.
@@ -33,8 +37,9 @@ simulation-core ────────────────► CLI / MCP se
 - `report.ts`: shared styling and escaped standalone report rendering.
 - `storage.ts`: bounded reads, local operation lock, atomic artifact writes, canonical hashing.
 
-The original simulation core remains pure and backward compatible. The new launch
-model is specified in [LAUNCH-MODEL.md](LAUNCH-MODEL.md).
+The original simulation core remains pure and backward compatible. The primary
+workflow is described in [AI-REHEARSAL.md](AI-REHEARSAL.md). The advanced deterministic
+funnel remains specified in [LAUNCH-MODEL.md](LAUNCH-MODEL.md).
 
 ## State machine
 

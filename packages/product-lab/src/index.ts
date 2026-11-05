@@ -12,3 +12,7 @@ export * from "./discovery.js";
 export * from "./public-prices.js";
 export * from "./auto-ai.js";
 export * from "./codex-ai.js";
+export * from "./inference.js";
+export * from "./rehearsal-schema.js";
+export * from "./rehearsal.js";
+export * from "./experience-agent.js";

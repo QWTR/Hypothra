@@ -86,12 +86,19 @@ export function validateAIResult(input: unknown, model: ProjectModel, inspection
 }
 
 export async function analyzeWithCodex(model: ProjectModel, inspection: Inspection, executable: string): Promise<ProjectModel> {
-  // Validate and bound input before starting a child process or creating files.
-  const input = projectAnalysisInstructions + "\n\nUNTRUSTED PROJECT DATA:\n" + analysisPayload(model, inspection);
+  const result = await structuredCodex(modelOutputSchema, projectAnalysisInstructions, analysisPayload(model, inspection), executable);
+  return validateAIResult(result.value, model, inspection);
+}
+
+export type ModelUsage = { inputTokens: number; outputTokens: number; cachedInputTokens: number };
+export async function structuredCodex<T>(schema: z.ZodType<T>, instructions: string, data: string, executable: string) {
+  if (Buffer.byteLength(data) > 240_000) throw new Error("AI input exceeds its byte budget.");
+  const input = instructions + "\n\nUNTRUSTED DATA:\n" + data;
+  let usage: ModelUsage | null = null;
   const taskDir = await mkdtemp(join(tmpdir(), "hypothra-ai-"));
   try {
     const schemaPath = join(taskDir, "response-schema.json"), outputPath = join(taskDir, "response.json");
-    await writeFile(schemaPath, JSON.stringify(z.toJSONSchema(modelOutputSchema)));
+    await writeFile(schemaPath, JSON.stringify(z.toJSONSchema(schema)));
     const disabled = ["shell_tool", "unified_exec", "apps", "plugins", "memories", "multi_agent", "computer_use", "browser_use", "in_app_browser", "image_generation", "hooks", "skill_search", "workspace_dependencies"];
     const args = ["exec", "--ignore-user-config", "--ignore-rules", "--skip-git-repo-check", "--ephemeral", "--sandbox", "read-only", "--color", "never", "--json",
       "-c", "approval_policy=\"never\"", "-c", "web_search=\"disabled\"", "--output-schema", schemaPath, "--output-last-message", outputPath,
@@ -112,6 +119,23 @@ export async function analyzeWithCodex(model: ProjectModel, inspection: Inspecti
       const timer = setTimeout(() => abort(new Error("AI analysis timed out. You can retry.")), 150_000);
       const count = (chunk: Buffer) => { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) abort(new Error("AI output exceeded its size limit.")); };
       child.stdout.on("data", count); child.stderr.on("data", count);
+      let pending = "";
+      child.stdout.on("data", chunk => {
+        pending += chunk.toString();
+        if (Buffer.byteLength(pending) > 2 * 1024 * 1024) { pending = ""; return; }
+        const lines = pending.split("\n"); pending = lines.pop() ?? "";
+        for (const line of lines) {
+          try {
+            const event = JSON.parse(line);
+            if (event.type === "turn.completed" && event.usage) {
+              const u = event.usage;
+              if ([u.input_tokens, u.output_tokens, u.cached_input_tokens ?? 0].every(n => Number.isSafeInteger(n) && n >= 0)) {
+                usage = { inputTokens: u.input_tokens, outputTokens: u.output_tokens, cachedInputTokens: u.cached_input_tokens ?? 0 };
+              }
+            }
+          } catch { /* Only bounded structured usage events are retained. */ }
+        }
+      });
       child.once("error", () => abort(new Error("The Codex analysis engine could not be started.")));
       child.once("close", code => finish(failure ?? (code === 0 ? undefined : new Error("The Codex analysis engine did not complete. Check that Codex is signed in and the account has available usage."))));
       child.stdin.on("error", () => {});
@@ -119,7 +143,7 @@ export async function analyzeWithCodex(model: ProjectModel, inspection: Inspecti
     });
     const output = await readFile(outputPath, "utf8");
     if (Buffer.byteLength(output) > 512 * 1024) throw new Error("AI result exceeded its size limit.");
-    return validateAIResult(JSON.parse(output), model, inspection);
+    return { value: schema.parse(JSON.parse(output)), usage };
   } finally {
     await cleanupAnalysisDirectory(taskDir);
   }

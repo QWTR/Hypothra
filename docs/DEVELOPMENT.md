@@ -33,6 +33,15 @@ Code, comments, UI, and documentation are English.
 
 ## Normal edit/test loop
 
+The AI-first launch engine lives in `rehearsal.ts`: job phases, exact accounting,
+pause/resume, crash recovery and artifacts. `rehearsal-schema.ts` defines the plan,
+individual decisions and result contracts. Change prompts there to change audience
+reasoning. `experience-agent.ts` implements real AI-directed browser actions and
+their boundaries. `inference.ts` selects the signed-in Codex or compatible endpoint;
+`codex-ai.ts` supplies bounded structured execution. `rehearsal-view.ts` and
+`rehearsal-client.ts` control the new friendly panel. Never remove decision-ID or
+evidence validation to make a model response pass.
+
 ```powershell
 cd D:\Hypothra
 git status

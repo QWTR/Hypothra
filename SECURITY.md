@@ -94,6 +94,21 @@ are rejected. Tokens belong in an ignored local environment file and are not
 included in reports. `.env` is read only when explicitly supplied via `--env-file`.
 Do not paste tokens into issues, prompts, or chat.
 
+## AI rehearsal boundaries
+
+AI rehearsals explicitly consume the selected model account and enforce a request
+cap before every inference. Automatic preparation researches published advertising
+benchmarks and uploads selected model/evidence/creative data to that engine. Browser
+exploration additionally uploads bounded visible text/control observations from
+the chosen local test app. Inputs are redacted on a best-effort basis. Model and
+page content are untrusted. The agent can use only inventoried controls and
+host-generated dummy inputs; external origins, WebSockets, file inputs and
+downloads are blocked. A conservative label heuristic rejects obvious payment,
+destructive and outgoing-message controls; it cannot establish what arbitrary
+application code behind an innocently named button will do.
+These boundaries do not isolate the local app's backend. Explicit synthetic-data
+confirmation is required. See the detailed [AI rehearsal boundaries](docs/AI-REHEARSAL.md).
+
 ## Reporting
 
 Use GitHub private vulnerability reporting if enabled. Otherwise open an issue
