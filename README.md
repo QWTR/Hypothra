@@ -87,7 +87,7 @@ the panel, with drive buttons, parent navigation, and an editable path. No deskt
 popup is required. No project is scanned before
 you select it. A private `.hypothra/.gitignore` keeps analysis artifacts out of Git.
 
-In step 2, choose **Let AI prepare my virtual launch**. A reel idea and budget
+In step 2, choose **Build my launch plan**. A reel idea and budget
 constraints are optional. Review or edit the AI's script, audience, costs and
 published price references, then start the audience. Pause/resume and inspect
 individual decisions at any point. Step 3 can send interested synthetic installers

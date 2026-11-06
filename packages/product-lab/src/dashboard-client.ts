@@ -1,8 +1,9 @@
 import type { projectStatus } from "./workflow.js";
 import type { findPublicPrices } from "./public-prices.js";
+import type { DashboardUI } from "./dashboard-ui.js";
 
 /** Serialized into the local page. Keep all runtime helpers inside this function. */
-export function dashboardClient(token: string) {
+export function dashboardClient(token: string, ui: DashboardUI) {
   type State = Awaited<ReturnType<typeof projectStatus>> & { projectRoot: string };
   type Channel = State["plan"]["channels"][number];
   let state: State;
@@ -16,6 +17,7 @@ export function dashboardClient(token: string) {
   let folderLocation = "";
   let folderParent: string | null = null;
   let folderRequest = 0;
+  let folderEditing = false;
   const dirty = new Set<string>();
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const value = (id: string) => $<HTMLInputElement>(id).value;
@@ -28,10 +30,7 @@ export function dashboardClient(token: string) {
   const format = (amount: number) => new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(amount);
   const sourceName = (type: string) => ({ "manual-assumption": "Your cost assumption", "public-benchmark": "Published web benchmark", "account-api": "Your campaign history", "account-export": "Your campaign export" })[type] ?? type;
   function step(index: number) {
-    document.querySelectorAll<HTMLElement>("[data-panel]").forEach(panel => { panel.hidden = panel.dataset.panel !== String(index); });
-    document.querySelectorAll<HTMLButtonElement>(".step").forEach(button => {
-      if (button.dataset.step === String(index)) button.setAttribute("aria-current", "step"); else button.removeAttribute("aria-current");
-    });
+    ui.navigate(index);
   }
   function message(text: string, kind = "") { $("status").textContent = text; $("status").className = `status ${kind}`; }
   function changed(scope: string) {
@@ -39,20 +38,25 @@ export function dashboardClient(token: string) {
     if (scope === "product") { $("approval-note").textContent = "Save your changes before continuing."; $<HTMLButtonElement>("approve").disabled = true; }
   }
   async function api(path: string, body?: unknown) {
-    const response = await fetch(path, { method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json", "X-Hypothra-Token": token, ...(state ? { "X-Hypothra-Project": state.projectRoot } : {}) } : {}, ...(body ? { body: JSON.stringify(body) } : {}) });
+    let response: Response;
+    try { response = await fetch(path, { method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json", "X-Hypothra-Token": token, ...(state ? { "X-Hypothra-Project": state.projectRoot } : {}) } : {}, ...(body ? { body: JSON.stringify(body) } : {}) }); ui.connection(true); }
+    catch { ui.connection(false); throw new Error("Connection interrupted. Your saved work is safe. Keep Hypothra running and try again."); }
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Something went wrong. Please try again.");
     return data;
   }
   async function action(task: () => Promise<void>, success: string) {
     if (busy) return;
-    busy = true; message("Working…");
-    document.querySelectorAll<HTMLButtonElement>("button").forEach(button => { button.disabled = true; });
-    try { await task(); await load(); message(state ? success : "Choose your project folder. AI will prepare the details automatically.", "success"); }
-    catch (error) { message(error instanceof Error ? error.message : "Please try again.", "error"); }
+    busy = true;
+    const trigger = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+    const labels: Record<string, string> = { "save-product": "Saving changes…", "approve": "Confirming product…", "open-project": "Reading your project…", "browse-project": "Opening project…", "run-checks": "Checking your app…", "run": "Calculating…", "find-prices": "Finding published prices…", "analyze-ai": "Starting AI analysis…" };
+    ui.busy(trigger, true, labels[trigger?.id ?? ""] ?? "Working…");
+    message(trigger ? labels[trigger.id] ?? "Working…" : "Loading your workspace…");
+    try { await task(); await load(); message(state ? success : "Choose your project folder. AI will prepare the details automatically.", "success"); if (trigger) ui.announce(success); else $("status").classList.add("initial-ready"); }
+    catch (error) { const text = error instanceof Error ? error.message : "Please try again."; message(text, "error"); if (trigger) ui.announce(text, true); }
     finally {
       busy = false;
-      document.querySelectorAll<HTMLButtonElement>("button").forEach(button => { button.disabled = false; });
+      ui.busy(trigger, false);
       if (state) $<HTMLButtonElement>("approve").disabled = dirty.has("product");
       if (state) renderAI();
     }
@@ -77,6 +81,7 @@ export function dashboardClient(token: string) {
   }
   function renderProduct() {
     const project = state.model.project;
+    for (const [id, text] of Object.entries({ "brief-name": project.name, "brief-description": project.description, "brief-audience": project.audience.join(" · "), "brief-value": project.valueProposition, "brief-avatar": project.name.slice(0, 1).toUpperCase() })) $(id).textContent = text;
     for (const [id, text] of Object.entries({ "product-name": project.name, "product-description": project.description, "product-audience": project.audience.join("; "), "product-value": project.valueProposition, "product-money": project.monetization })) put(id, text);
     technologies = structuredClone(state.model.stack); features = structuredClone(state.model.capabilities); productJourneys = structuredClone(state.model.userJourneys);
     put("unknown-notes", state.model.unknowns.join("\n"));
@@ -127,9 +132,13 @@ export function dashboardClient(token: string) {
   function renderAI() {
     const ai = state.ai;
     const running = ai.status === "running" || ai.status === "idle";
+    $("ai-progress").dataset.working = String(running);
+    $("ai-progress").dataset.complete = String(ai.status === "completed");
+    (ai.status === "completed" ? $("product-ai-actions") : $("ai-progress")).append($("analyze-ai"));
+    $("ai-live-track").hidden = !running;
     $("ai-heading").textContent = running ? "AI is understanding your project…" : ai.status === "completed" ? "Your project details were filled by AI" : ai.status === "disabled" ? "Automatic analysis is off for this run" : "AI analysis needs attention";
     $("ai-message").textContent = ai.message;
-    $("ai-progress").className = `notice ${ai.status === "completed" ? "good" : ["failed", "unavailable"].includes(ai.status) ? "warn" : ""}`;
+    $("ai-progress").className = `run-stage ai-progress ${["failed", "unavailable"].includes(ai.status) ? "warn" : ""}`;
     $("analyze-ai").hidden = running;
     $("analyze-ai").textContent = ai.status === "completed" ? "Re-analyze with AI" : "Analyze with AI";
     $("product-form").hidden = running && !dirty.has("product");
@@ -248,19 +257,27 @@ export function dashboardClient(token: string) {
     if (data.status === "choose-project") {
       document.querySelectorAll<HTMLElement>("[data-panel],.steps,.advanced").forEach(element => { element.hidden = true; });
       $("folder-current").textContent = "No project selected yet.";
+      $("active-project").hidden = true; $("folder-controls").hidden = false; $("workspace-intro").hidden = false; $("sidebar-placeholder").hidden = false;
       return;
     }
     if (state?.projectRoot !== data.projectRoot) {
       if (state && dirty.size) throw new Error("Another window selected a different project. Copy any unsaved edits you want to keep, then use Reload saved data / discard edits.");
       publicResults = null; $("public-prices").replaceChildren();
+      folderEditing = false;
     }
     state = data;
+    $("active-project").hidden = false; $("folder-controls").hidden = !folderEditing; $("workspace-intro").hidden = true; $("sidebar-placeholder").hidden = true;
+    $("active-project-name").textContent = state.model.project.name;
+    $("workspace-project").textContent = state.model.project.name;
+    $("project-monogram").textContent = state.model.project.name.slice(0, 1).toUpperCase();
+    document.querySelector<HTMLElement>('.step[data-step="0"]')!.dataset.done = String(state.status === "approved");
     $("folder-current").textContent = "Current project: " + state.projectRoot;
     put("project-folder", state.projectRoot);
     document.querySelectorAll<HTMLElement>(".steps,.advanced").forEach(element => { element.hidden = false; });
     if (![...document.querySelectorAll<HTMLElement>("[data-panel]")].some(element => !element.hidden)) step(0);
     $("state").textContent = state.status === "approved" ? "Confirmed" : "Needs your review";
     $("approval-note").textContent = state.status === "approved" ? "Your description is confirmed." : "Confirm the saved description to continue.";
+    $("approve").textContent = state.status === "approved" ? "Continue to launch plan" : "Looks right — continue";
     $("stack").replaceChildren(...state.model.stack.map(item => node("span", item.name, "chip")));
     $("unknowns").replaceChildren(...state.model.unknowns.map(text => node("li", text)));
     $("scan").textContent = `${state.inspection.filesScanned} files reviewed · ${state.inspection.evidence.length} source references`;
@@ -302,6 +319,7 @@ export function dashboardClient(token: string) {
     }
   }
   document.querySelectorAll<HTMLButtonElement>("[data-step]").forEach(button => { button.onclick = () => step(Number(button.dataset.step)); });
+  $("change-project").onclick = () => { folderEditing = !folderEditing; $("folder-controls").hidden = !folderEditing; if (folderEditing) { $("folder-controls").scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); $("browse-project").focus({ preventScroll: true }); } };
   async function openFolder(directory: string) {
     if (dirty.size) throw new Error("Save your current edits, or use Reload saved data / discard edits before switching projects.");
     message("Opening your project. AI will prepare its description automatically…");
@@ -403,5 +421,11 @@ export function dashboardClient(token: string) {
   document.querySelectorAll<HTMLButtonElement>("[data-save]").forEach(button => { button.onclick = () => { void action(async () => { const kind = button.dataset.save!; await api("/api/experiment", { kind, value: JSON.parse(value(kind)) }); dirty.delete(`json-${kind}`); if (kind === "launch") dirty.delete("launch"); if (kind === "benchmarks") dirty.delete("prices"); }, "Advanced settings saved."); }; });
   $("reload").onclick = () => { dirty.clear(); void action(async () => {}, "Saved settings reloaded."); };
   window.addEventListener("beforeunload", event => { if (dirty.size) { event.preventDefault(); event.returnValue = ""; } });
-  void action(async () => {}, "Start by checking your product description. Use the four steps above to move through your launch.");
+  setInterval(() => {
+    const ai = state?.ai, element = $("ai-elapsed");
+    if (!ai || ai.status !== "running" || !ai.startedAt) { element.textContent = ""; return; }
+    const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(ai.startedAt)) / 1000));
+    element.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} elapsed`;
+  }, 1000);
+  void action(async () => {}, "Start by checking your product brief. Each step takes you closer to a clearer launch.");
 }

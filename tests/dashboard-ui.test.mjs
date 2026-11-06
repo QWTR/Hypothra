@@ -28,6 +28,8 @@ test("friendly panel completes product correction, public price selection, app c
     await page.goto(dashboard.url);
     await page.locator("#status").filter({ hasText: "Start by checking" }).waitFor();
     for (const editor of await page.locator("textarea.json").all()) assert.equal(await editor.isVisible(), false);
+    assert.equal(await page.getByLabel("What does it do?").isVisible(), false);
+    await page.locator("#product-editor > summary").click();
     await page.getByLabel("What does it do?").fill("Corrected: drivers can save their favorite routes.");
     assert.equal(await page.locator("#approve").isDisabled(), true);
     await page.getByRole("button", { name: "Save changes", exact: true }).click();

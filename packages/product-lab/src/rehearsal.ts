@@ -18,6 +18,11 @@ export type RehearsalDependencies = { infer?: Infer; prices?: typeof findPublicP
 type Dependencies = RehearsalDependencies;
 class Pause extends Error {}
 const now = () => new Date().toISOString();
+async function recordActivity(root: string, state: RehearsalState, label: string, kind: RehearsalState["activity"][number]["kind"]) {
+  state.activity.push({ at: now(), label: label.slice(0, 400), kind });
+  state.activity = state.activity.slice(-8);
+  await persist(root, state);
+}
 
 async function persist(root: string, state: RehearsalState) {
   state.updatedAt = now();
@@ -168,7 +173,7 @@ export async function prepareRehearsal(directory: string, input: unknown, deps: 
       input: config, plan: null, market: { benchmarks: [], checkedAt: now().slice(0, 10), error: null },
       audience: { evaluated: 0, watched: 0, clicked: 0, installed: 0, batches: 0, reasons: {}, samples: [] },
       experience: { baseUrl: null, consent: false, target: 0, tested: 0, satisfied: 0, dropout: 0, blocked: 0, stepLimit: 0, issues: {}, samples: [] },
-      calls: { attempted: 0, completed: 0, inputTokens: 0, outputTokens: 0, usageUnreported: 0, provider: null, model: null }, optimization: null,
+      calls: { attempted: 0, completed: 0, inputTokens: 0, outputTokens: 0, usageUnreported: 0, provider: null, model: null }, optimization: null, planningStep: "research", runStartedAt: now(), activity: [{ at: now(), label: "Checking published advertising price references", kind: "research" }],
       limitations: ["Every counted viewer has an individually generated AI decision. A batch may share a model call; these are not independently validated human responses.",
         "Increasing sample size does not remove model bias or calibrate real market conversion. No population confidence interval is claimed.",
         "AI proposes audience composition, costs and budget as editable hypotheses. Published prices retain their source, period and market scope.",
@@ -180,13 +185,15 @@ export async function prepareRehearsal(directory: string, input: unknown, deps: 
     work(root, state, release, async infer => {
       try { const prices = await (deps.prices ?? findPublicPrices)(config.currency); state.market.benchmarks = prices.benchmarks.filter(item => item.metric === "cpm"); state.market.checkedAt = prices.checkedAt; }
       catch { state.market.error = "Published ad prices could not be verified. Media costs remain unknown; no invented market price is substituted."; }
-      await persist(root, state);
+      state.planningStep = "compose";
+      await recordActivity(root, state, state.market.error ? "Price references unavailable — keeping media costs unknown" : "Published price references checked", "saved");
+      await recordActivity(root, state, "AI is writing the creative, audience and cost proposal", "thinking");
       const plan = (await infer(rehearsalPlanSchema,
         "Prepare a complete virtual product launch without asking the owner to fill a funnel form. Propose the audience, 2–12 diverse segments including skeptical and irrelevant viewers, a concise reel script/hook/CTA, business costs and a budget. Respect owner constraints. All segment shares and channel shares must each sum to 1. Costs must have basis ai-estimate; source-derived ideas may cite only supplied evidence IDs. Only supplied published CPM benchmark IDs may be used for channels, otherwise benchmarkId=null. Never invent observed advertising prices. Format is script-only or ad-description-only: explicitly state that no actual video or audio was analyzed. Distinguish product-source facts, cost guesses and uncertainties. No user-supplied CTR or conversion rate is needed. Do not add rate assumptions or forecast fake counts.",
         { project: context.model, evidence: context.inspection.evidence.slice(0, 120), request: config, publicPrices: state.market })).value;
       state.plan = validateRehearsalPlan(plan, state, new Set(context.inspection.evidence.map(item => item.id)));
-      state.status = "ready"; state.phase = "audience"; state.message = "AI prepared the plan. Review or edit it, confirm your product, then start the individual audience evaluations.";
-      await persist(root, state);
+      state.status = "ready"; state.phase = "audience"; state.planningStep = "ready"; state.message = "AI prepared the plan. Review or edit it, confirm your product, then start the individual audience evaluations.";
+      await recordActivity(root, state, "Your launch plan is saved and ready to review", "ready");
     }, deps);
     return structuredClone(state);
   } catch (error) { await release(); throw error; }
@@ -232,7 +239,7 @@ export async function resumeRehearsal(directory: string, runId: string, options:
     if (!state || state.id !== runId || !state.plan || state.modelRevision !== context.revision || state.sourceDigest !== context.inspection.sourceDigest) throw new Error("Review the current product and prepare a matching AI launch plan first.");
     if (state.phase === "complete") throw new Error("This run is complete. Add local app exploration or prepare a new launch variant.");
     if (options.maxAICalls !== undefined) state.input.maxAICalls = rehearsalInputSchema.shape.maxAICalls.parse(options.maxAICalls);
-    state.status = "running"; state.message = "AI is evaluating individual synthetic people. Counts include completed records only.";
+    state.status = "running"; state.runStartedAt = now(); state.message = "AI is evaluating individual synthetic people. Counts include completed records only.";
     await persist(root, state);
     work(root, state, release, async (infer, paused) => {
       const directory = await runDirectory(root, state.id);
@@ -245,6 +252,7 @@ export async function resumeRehearsal(directory: string, runId: string, options:
           try { viewers = validateViewerBatch(await readJson(join(directory, name)), assigned); }
           catch (error) {
             if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+            await recordActivity(root, state, `AI is evaluating viewers ${assigned[0]!.id}–${assigned.at(-1)!.id}`, "thinking");
             const result = (await infer(viewerBatchSchema,
               "For EACH assigned ID create one distinct synthetic person within its assigned segment and make that person's own watch/click/install decisions about the creative. Develop a concrete personal context, need, objection and attention level. Do not use a target conversion percentage, multiply a funnel, repeat one verdict, balance outcomes to a quota, or extrapolate unexamined people. Include indifferent and skeptical people when appropriate to their segment. Watch means staying for the pitch; click requires watch; install means deciding to try/download after the click and requires click. It is a synthetic intent, not an observed download. Return exactly the assigned IDs and segment IDs, with an individual reason and expectation for each. Do not claim actual video viewing or real market measurements.",
               { project: context.model.project, plan: state.plan, assigned })).value;
@@ -256,7 +264,7 @@ export async function resumeRehearsal(directory: string, runId: string, options:
             state.audience.reasons[viewer.reasonCode] = (state.audience.reasons[viewer.reasonCode] ?? 0) + 1;
             if (state.audience.samples.length < 24) state.audience.samples.push(viewer);
           }
-          state.audience.batches++; await persist(root, state);
+          state.audience.batches++; await recordActivity(root, state, `${state.audience.evaluated.toLocaleString()} individual reactions saved`, "saved");
         }
         state.phase = "optimization"; await persist(root, state);
       }
@@ -274,7 +282,8 @@ export async function resumeRehearsal(directory: string, runId: string, options:
             try { result = await readJson(join(directory, name), experienceSchema); }
             catch (error) {
               if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-              result = await exploreAsViewer(viewer, context.model, state.experience.baseUrl, infer, state.id);
+              result = await exploreAsViewer(viewer, context.model, state.experience.baseUrl, infer, state.id,
+                async (label, kind) => recordActivity(root, state, `${viewer.id} · ${label}`, kind));
               await writeArtifact(directory, name, result);
             }
             if (result.viewerId !== viewer.id) throw new Error("Browser result refers to a different synthetic viewer.");
@@ -290,12 +299,13 @@ export async function resumeRehearsal(directory: string, runId: string, options:
             }
             if (state.experience.samples.length < 8) state.experience.samples.push(result);
             else if (result.runtimeErrors.some(error => !state.experience.samples.some(sample => sample.runtimeErrors.includes(error)))) state.experience.samples[7] = result;
-            await persist(root, state);
+            await recordActivity(root, state, `Browser visit saved for ${viewer.id} · ${result.outcome}`, "saved");
           }
         }
         state.phase = "optimization"; await persist(root, state);
       }
       checkpoint();
+      await recordActivity(root, state, "AI is turning the saved reactions and observations into recommendations", "thinking");
       const evidence = [
         ...state.audience.samples.map(viewer => ({ id: `viewer:${viewer.id}`, basis: "synthetic-opinion", content: viewer })),
         ...state.experience.samples.flatMap(result => result.observations.map(observation => ({ id: `app:${result.viewerId}:${observation.id}`, basis: "observed-browser-result", content: { observation, actions: result.actions, runtimeErrors: result.runtimeErrors, opinion: result.feedback } }))),
@@ -311,7 +321,7 @@ export async function resumeRehearsal(directory: string, runId: string, options:
       if (current.revision !== state.modelRevision || current.inspection.sourceDigest !== state.sourceDigest) throw new Error("Project changed during the run. Results are retained, but must not be attributed to the current version.");
       state.optimization = optimization; state.phase = "complete"; state.status = "completed";
       state.message = "Virtual launch completed. Review individual AI decisions and the evidence behind each suggested change.";
-      await persist(root, state);
+      await recordActivity(root, state, "Your insights are ready", "ready");
     }, options);
     return structuredClone(state);
   } catch (error) { await release(); throw error; }

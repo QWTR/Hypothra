@@ -68,6 +68,17 @@ export async function writeArtifact(path: string, name: string, value: unknown, 
     const file = await open(temp, "wx");
     try { await file.writeFile(raw ? String(value) : JSON.stringify(value, null, 2) + "\n"); }
     finally { await file.close(); }
-    await rename(temp, destination);
+    await replaceArtifactFile(temp, destination);
   } finally { await unlink(temp).catch(() => {}); }
+}
+
+/** Keep the previous complete file while Windows briefly retains a reader/AV handle. */
+export async function replaceArtifactFile(source: string, destination: string, move: typeof rename = rename) {
+  for (let attempt = 0; ; attempt++) {
+    try { await move(source, destination); return; }
+    catch (error) {
+      if (attempt >= 7 || !["EPERM", "EBUSY", "EACCES"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+      await new Promise(resolve => setTimeout(resolve, Math.min(25 * (attempt + 1), 150)));
+    }
+  }
 }

@@ -70,5 +70,8 @@ export const rehearsalStateSchema = z.object({
   calls: z.object({ attempted: z.number().int(), completed: z.number().int(), inputTokens: z.number().int(), outputTokens: z.number().int(),
     usageUnreported: z.number().int(), provider: z.string().nullable(), model: z.string().nullable() }).strict(),
   optimization: optimizationSchema.nullable(), limitations: z.array(text),
+  planningStep: z.enum(["research", "compose", "ready"]).default("research"),
+  runStartedAt: z.string().nullable().default(null),
+  activity: z.array(z.object({ at: z.string(), label: z.string().max(400), kind: z.enum(["research", "thinking", "browser", "saved", "ready"]) }).strict()).max(8).default([]),
 }).strict();
 export type RehearsalState = z.infer<typeof rehearsalStateSchema>;

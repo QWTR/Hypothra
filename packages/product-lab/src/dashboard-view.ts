@@ -1,39 +1,42 @@
-import { inlineJson, style } from "./report.js";
+import { inlineJson } from "./report.js";
 import { dashboardClient } from "./dashboard-client.js";
 import { rehearsalClient } from "./rehearsal-client.js";
 import { rehearsalSetupHtml, rehearsalAppHtml, rehearsalResultsHtml } from "./rehearsal-view.js";
 
-const extraStyle = `
-[hidden]{display:none!important}main{max-width:1120px;padding-top:28px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:38px}.brand{font-weight:750;font-size:22px;letter-spacing:-.04em}.brand i{display:inline-block;width:14px;height:14px;border:3px solid var(--accent);border-radius:4px;margin-right:10px;transform:rotate(-12deg)}h1{font-size:clamp(32px,4.6vw,49px);margin:10px 0 12px}.lead{font-size:16px;max-width:690px}.local{font-size:12px;color:var(--good)}.local:before{content:'●';margin-right:7px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:28px 0}.step{text-align:left;background:transparent;padding:15px;border:1px solid var(--line);display:flex;align-items:center;gap:10px}.step[aria-current=step]{background:#263040;border-color:var(--accent)}.step b{border:1px solid #47576d;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;font-size:12px;flex-shrink:0}.step[aria-current=step] b{background:var(--accent);color:#18140e;border-color:var(--accent)}.step small{display:block;font-size:11px;color:var(--muted)}.panel{padding:28px;margin-top:8px}.panel-head{display:flex;justify-content:space-between;align-items:start;gap:15px}.panel h2{font-size:25px;letter-spacing:-.02em;margin:2px 0 8px}.panel h3{margin:0 0 8px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.wide{grid-column:1/-1}label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}label.field small,.help{font-weight:400;font-size:12px;color:var(--muted)}input:not([type=checkbox]),select,textarea{width:100%;min-width:0}textarea{min-height:100px;font:inherit;line-height:1.5}textarea.json{font:12px/1.6 ui-monospace,monospace;min-height:330px}.actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap}.actions .right,.inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.notice{border:1px solid #3e4a5d;border-radius:10px;padding:13px 16px;background:#101a27;font-size:13px;margin:16px 0}.notice.warn{border-color:#665032;background:#221e17}.notice.good{border-color:#315c4e;background:#11251e}.status:empty{display:none}.status{margin:8px 0 18px;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:#151e2a;font-size:13px}.status.error{color:var(--bad);border-color:#7b443f}.status.success{color:var(--good)}button{font-size:13px;padding:10px 16px}.subcard{border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0;background:#101926}.subcard p{font-size:13px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}.chip{background:#1f2e41;padding:5px 10px;border-radius:6px;font-size:12px}.tech-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin:8px 0}.feature-row{padding:14px 0;border-bottom:1px solid var(--line)}.feature-row input{font-weight:600}.feature-row textarea{min-height:70px;margin-top:7px;font-size:13px}.muted-button{background:transparent}.budget-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}.budget-strip>div{background:#0c1420;padding:14px;border-radius:8px}.budget-strip strong{display:block;font-size:21px}.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.price{font-size:22px;font-weight:700}.price small{font-size:12px;font-weight:400;color:var(--muted)}.source-card{border:1px solid var(--line);border-radius:10px;padding:16px;margin:12px 0}.source-card label{display:flex;align-items:start;gap:10px;cursor:pointer}.source-card input{width:auto!important;margin-top:7px}.source-card a{font-size:12px}.source-card p{font-size:12px}.source-card.selected{border-color:var(--accent)}.journey{display:grid;grid-template-columns:1fr auto;gap:14px;padding:18px 0;border-bottom:1px solid var(--line)}.journey p{font-size:13px;margin:4px 0}.journey small{color:var(--muted)}.outcome{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 10px;background:#233143;font-size:12px;height:fit-content}.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}.result-grid .card{padding:17px}.result-grid .number{font-size:25px}.step-note{font-size:12px;color:var(--muted)}.summary-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px}details{margin-top:15px}summary{font-size:13px;color:var(--muted);padding:3px 0}details[open]>summary{margin-bottom:14px}.rate-grid{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:8px;align-items:center;font-size:12px;margin:8px 0}.rate-grid input{padding:8px}.advanced{margin-top:24px}.busy-note{color:var(--accent)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}footer{margin-top:25px}.panel-head .pill{white-space:nowrap}@media(max-width:700px){.steps{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.wide{grid-column:auto}.result-grid{grid-template-columns:1fr 1fr}.panel{padding:18px}.tech-row{grid-template-columns:1fr}.budget-strip{gap:7px}.budget-strip>div{padding:10px}.budget-strip strong{font-size:17px}.rate-grid{grid-template-columns:1.5fr repeat(3,1fr);gap:4px}.rate-grid input{padding:7px 3px}.topbar{margin-bottom:25px}.step{padding:10px;gap:7px}.step span{font-size:12px}}`;
+import { dashboardStyle } from "./dashboard-style.js";
+import { dashboardUI } from "./dashboard-ui.js";
 
 export function dashboardHtml(token: string): string {
   return `<!doctype html><html lang="en"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Hypothra · Plan your launch</title><style>${style}\n${extraStyle}\n#folder-current{overflow-wrap:anywhere;min-width:0;max-width:100%}.budget-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.budget-strip>div,.result-grid .card{min-width:0}.budget-strip strong,.result-grid .number{overflow-wrap:anywhere}.result-grid{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:700px){.result-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head>
-  <body><main>
-    <header><div class="topbar"><div class="brand"><i></i>Hypothra</div><span class="local">Local workspace</span></div>
-      <div class="eyebrow">Your product, one step at a time</div><h1>A clearer path to your next launch.</h1>
-      <p class="lead">Tell us what you are building, plan your promotion, and check the experience before people arrive.</p>
-    </header>
-    <section class="panel" aria-label="Project selection">
-      <h2>Choose your project folder</h2><p>Hypothra can stay installed anywhere. Select the application or website you want AI to understand.</p>
-      <form id="folder-form"><label class="field">Project folder<input id="project-folder" aria-label="Project folder" required placeholder="D:\\MyProjects\\MyApp" autocomplete="off"><small>Analysis is saved with this project, so you can return to it later.</small></label>
-        <div class="toolbar" style="margin-top:12px"><button id="browse-project" type="button">Browse folders…</button><button class="primary" id="open-project" type="submit">Open & analyze project</button><span class="help" id="folder-current"></span></div>
-      </form>
-    </section>
-    <nav class="steps" aria-label="Launch setup" hidden>
+  <title>Hypothra · Your launch workspace</title><style>${dashboardStyle}</style></head>
+  <body><div class="app-shell"><aside class="sidebar" aria-label="Workspace navigation">
+    <div class="brand"><svg class="brand-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M10 9v22M30 9v22M10 20h20" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><ellipse cx="20" cy="20" rx="17" ry="10" stroke="currentColor" stroke-width="1.3" transform="rotate(-35 20 20)"/></svg>hypothra<span style="font-size:10px;color:#759a83;align-self:start;margin-top:3px">beta</span></div>
+    <div class="sidebar-label">Your launch, made clearer</div>
+    <div id="sidebar-placeholder" class="sidebar-empty">A little understanding.<br>A better first impression.<br>A more confident launch.</div>
+        <nav class="steps" aria-label="Launch setup" hidden>
       <button class="step" data-step="0" aria-current="step"><b>1</b><span>Your product<small>Review the AI summary</small></span></button>
       <button class="step" data-step="1"><b>2</b><span>Launch plan<small>AI creative & audience</small></span></button>
       <button class="step" data-step="2"><b>3</b><span>App checks<small>Interested AI visitors</small></span></button>
       <button class="step" data-step="3"><b>4</b><span>Your results<small>See what needs attention</small></span></button>
     </nav>
+    <div class="sidebar-note"><div class="privacy-mark">Your workspace. Your control.</div><p>AI helps you explore possibilities.<br>You choose what happens next.</p></div>
+    </aside><div class="workspace"><header class="workspace-bar"><div class="breadcrumb"><span>Workspace</span><span class="dot-separator">/</span><strong id="workspace-project">New project</strong></div><span id="connection-status" class="connection" role="status">Local workspace</span></header><main>
+    <header class="workspace-intro" id="workspace-intro"><div class="eyebrow">A clearer way to launch</div><h1>Big ideas.<br>A little less guesswork.</h1><p class="lead">Meet your product through fresh eyes. Understand it, rehearse the launch, and find your next best move.</p><div class="onboarding-flow" aria-hidden="true"><span><i></i>Understand</span><span>→</span><span><i></i>Rehearse</span><span>→</span><span><i></i>Improve</span></div></header>
+    <section class="project-picker" aria-label="Project selection">
+      <div id="active-project" class="active-project" hidden><div id="project-monogram" class="project-monogram">P</div><div class="project-meta"><strong id="active-project-name">Your project</strong><span class="help" id="folder-current">No project selected yet.</span></div><button id="change-project" type="button">Change folder</button></div>
+      <div id="folder-controls" class="project-onboarding"><div class="folder-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 13h8m-4-4v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><h2>Start with your project.</h2><p>Choose its folder. AI will prepare a product brief for you to review.</p>
+        <div class="folder-actions"><button class="primary" id="browse-project" type="button">Browse folders…</button><span class="help">Your files stay where they are.</span></div>
+        <details id="folder-manual" class="manual-path"><summary>Or paste a folder path</summary><form id="folder-form"><label class="field">Project folder<input id="project-folder" aria-label="Project folder" required placeholder="D:\\MyProjects\\MyApp" autocomplete="off"></label><button id="open-project" class="primary" type="submit" style="margin-top:12px">Open & analyze project</button></form></details>
+      </div>
+    </section>
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
     <section class="panel" data-panel="0" hidden>
-      <div class="panel-head"><div><div class="eyebrow">Step 1 of 4</div><h2>AI gets to know your product.</h2><p>Your code becomes a ready-to-review summary. Change anything the AI misunderstood.</p></div><span class="pill" id="state">Loading…</span></div>
-      <div class="notice" id="ai-progress" role="status"><strong id="ai-heading">Preparing your project summary</strong><p id="ai-message">AI will fill in the details automatically.</p><button id="analyze-ai" type="button">Analyze with AI</button></div>
-      <div id="stack" class="chips"></div>
-      <form id="product-form"><div class="form-grid">
+      <div class="panel-head"><div><div class="eyebrow">Step 1 of 4</div><h2>Review your product brief.</h2><p>Your code becomes a ready-to-review summary. Change anything the AI misunderstood.</p></div><span class="pill" id="state">Loading…</span></div>
+      <div class="run-stage ai-progress" id="ai-progress" role="status" aria-live="polite"><div class="stage-heading"><div class="stage-orbit" aria-hidden="true">✧</div><div><span class="stage-pill">Product understanding</span><h3 id="ai-heading">Preparing your project summary</h3><p id="ai-message">AI will fill in the details automatically.</p></div><span id="ai-elapsed" class="stage-elapsed"></span></div><div id="ai-live-track" class="run-progress"><div class="progress-track" data-indeterminate="true"><div class="progress-fill"></div></div><p class="help">Your source scan is ready. AI is preparing the brief. You can leave this tab open.</p></div><button id="analyze-ai" type="button" style="margin-top:12px">Analyze with AI</button></div>
+      <form id="product-form"><article class="product-brief"><div class="brief-top"><div id="brief-avatar" class="brief-avatar">P</div><span class="brief-tag">Your product, understood</span></div><h3 id="brief-name"></h3><p id="brief-description" class="brief-description"></p><dl class="brief-facts"><div><dt>Made for</dt><dd id="brief-audience"></dd></div><div><dt>The value it brings</dt><dd id="brief-value"></dd></div></dl><div id="stack" class="chips"></div></article>
+      <details class="editor" id="product-editor"><summary>Edit project details</summary><div class="detail-body"><div class="form-grid">
         <label class="field">Product name<input id="product-name" required maxlength="180" autocomplete="off"></label>
         <label class="field">Who is it for?<input id="product-audience" required maxlength="4000" placeholder="For example: drivers planning weekend trips"><small>Separate different audiences with a semicolon.</small></label>
         <label class="field wide">What does it do?<textarea id="product-description" required maxlength="4000" placeholder="Explain the app in your own words."></textarea></label>
@@ -45,12 +48,12 @@ export function dashboardHtml(token: string): string {
       <details><summary>Edit the user journeys AI understood</summary><div id="product-journeys"></div><button type="button" class="muted-button" id="add-product-journey">+ Add a user journey</button></details>
       <details><summary>Correct the remaining questions</summary><label class="field">Questions or unknowns<textarea id="unknown-notes" placeholder="One question per line. Remove questions you have already answered."></textarea></label></details>
       <details><summary>Questions to check and source references</summary><ul id="unknowns"></ul><p class="help" id="scan"></p><pre id="evidence"></pre></details>
-      <div class="actions"><button type="submit" id="save-product">Save changes</button><div class="right"><span class="step-note" id="approval-note"></span><button type="button" class="primary" id="approve">Looks right — continue</button></div></div>
+      <button type="submit" id="save-product" style="margin-top:18px">Save changes</button><div id="product-ai-actions"></div></div></details><div class="actions"><div class="right"><span class="step-note" id="approval-note"></span><button type="button" class="primary" id="approve">Looks right — continue</button></div></div>
       </form>
     </section>
 
     <section class="panel" data-panel="1" hidden>
-      <div class="panel-head"><div><div class="eyebrow">Step 2 of 4</div><h2>Rehearse your launch with an AI audience.</h2><p>Let AI propose the plan, then see why individual virtual people would watch, click, try or leave.</p></div></div>
+      <div class="panel-head"><div><div class="eyebrow">Step 2 of 4</div><h2>Put your launch to the test.</h2><p>Let AI propose the plan, then see why individual virtual people would watch, click, try or leave.</p></div></div>
       ${rehearsalSetupHtml()}
       <details id="manual-launch"><summary>Advanced: manual funnel and cost assumptions</summary><form id="launch-form"><div class="form-grid">
         <label class="field wide">Your launch idea<textarea id="launch-idea" required maxlength="4000" placeholder="Describe your campaign or launch plan."></textarea></label>
@@ -68,7 +71,7 @@ export function dashboardHtml(token: string): string {
     </section>
 
     <section class="panel" data-panel="2" hidden>
-      <div class="eyebrow">Step 3 of 4</div><h2>Try the experience your ad promises.</h2><p>Interested synthetic visitors make their own next-action decisions using your actual local pages. Their opinions and observed browser results stay distinct.</p>
+      <div class="eyebrow">Step 3 of 4</div><h2>Try the app through fresh eyes.</h2><p>Interested synthetic visitors make their own next-action decisions using your actual local pages. Their opinions and observed browser results stay distinct.</p>
       ${rehearsalAppHtml()}
       <details id="scripted-checks"><summary>Advanced: run predefined browser assertions</summary><div class="notice" id="test-target"></div><div id="journey-list"></div>
       <div class="actions"><button data-step="1">Back</button><div class="right"><button id="run-checks">Run app checks</button><button class="primary" data-step="3">Continue to results</button></div></div>
@@ -76,7 +79,7 @@ export function dashboardHtml(token: string): string {
     </section>
 
     <section class="panel" data-panel="3" hidden>
-      <div class="panel-head"><div><div class="eyebrow">Step 4 of 4</div><h2>What should you improve next?</h2><p>Review individual reactions, actual test observations and the changes AI recommends.</p></div></div>
+      <div class="panel-head"><div><div class="eyebrow">Step 4 of 4</div><h2>Your next best moves.</h2><p>Review individual reactions, actual test observations and the changes AI recommends.</p></div></div>
       ${rehearsalResultsHtml()}
       <details id="manual-results"><summary>Advanced: deterministic funnel scenarios</summary><select id="result-variant" aria-label="Scenario"><option value="conservative">Cautious</option><option value="central" selected>Expected scenario</option><option value="optimistic">Optimistic</option></select><div id="result-notice" class="notice"></div><div id="result-cards" class="result-grid"></div><div id="findings-summary"></div>
       <div class="actions"><button data-step="2">Back</button><div class="right"><label class="inline"><input id="runtime" type="checkbox"> Include the latest app checks</label><button class="primary" id="run">Calculate launch scenario</button><a href="/report" id="report-link" hidden>Open full report →</a></div></div>
@@ -90,7 +93,7 @@ export function dashboardHtml(token: string): string {
       <details><summary>Browser journey definitions</summary><textarea class="json" id="journeys" aria-label="Browser journey JSON" spellcheck="false"></textarea><button data-save="journeys">Save journeys JSON</button></details>
       <p id="revision" class="meta code"></p><button id="reload">Reload saved data / discard edits</button>
     </details>
-    <footer>Your work stays in this local project. Preparing an AI launch researches published prices and sends selected project and creative data to your AI engine. No ads are purchased or published.</footer>
+    <footer class="footer-note">A rehearsal, not a prediction. AI opinions are synthetic; browser findings come from your local test app. Nothing buys or publishes ads.<details><summary>Privacy & model processing</summary>Preparing a launch sends selected project data to your AI engine and checks published ad benchmarks. Local app exploration uses the test environment you select.</details></footer>
     <dialog id="folder-picker" aria-labelledby="folder-picker-title">
       <div class="panel-head"><div><h2 id="folder-picker-title">Choose your project folder</h2><p>Browse a drive, open a folder, then select it below.</p></div><button id="folder-cancel" type="button" aria-label="Close folder picker">Close</button></div>
       <div id="folder-roots" class="toolbar"></div>
@@ -98,6 +101,5 @@ export function dashboardHtml(token: string): string {
       <p id="folder-picker-status" role="status" class="help"></p><div id="folder-list" aria-label="Folders"></div>
       <div class="actions"><span class="help">Your application stays in its current location.</span><button id="folder-select" class="primary" type="button">Open & analyze this folder</button></div>
     </dialog>
-    <style>#folder-picker{color:var(--text);background:var(--panel);border:1px solid #47576d;border-radius:15px;padding:24px;width:min(740px,calc(100vw - 24px));max-height:88vh;box-shadow:0 25px 90px #0008}#folder-picker::backdrop{background:#030810bd;backdrop-filter:blur(4px)}#folder-picker h2{font-size:24px;margin:0}#folder-list{max-height:38vh;min-height:140px;overflow:auto;border:1px solid var(--line);border-radius:8px}#folder-list button{display:block;text-align:left;width:100%;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;overflow-wrap:anywhere;padding:13px 16px}#folder-list button:hover,#folder-list button:focus-visible{background:#26384d}#folder-picker .actions{margin-top:16px}#folder-path{min-width:100px}#folder-picker .panel-head p{font-size:13px}@media(max-width:500px){#folder-picker{padding:16px}#folder-picker .panel-head{flex-wrap:wrap}}</style>
-  </main><script>const token=${inlineJson(token)};(${dashboardClient.toString()})(token);(${rehearsalClient.toString()})(token);</script></body></html>`;
+  <div id="feedback-toast" class="feedback-toast" aria-hidden="true" hidden></div></main></div></div><script>const token=${inlineJson(token)};const ui=(${dashboardUI.toString()})();(${dashboardClient.toString()})(token,ui);(${rehearsalClient.toString()})(token,ui);</script></body></html>`;
 }

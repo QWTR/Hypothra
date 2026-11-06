@@ -92,6 +92,7 @@ test("the panel shows AI progress, automatically loads generated fields, and let
     release();
     await page.locator("#ai-heading").filter({ hasText: "filled by AI" }).waitFor({ timeout: 15_000 });
     assert.equal(await page.getByLabel("Product name", { exact: true }).inputValue(), "Routebook");
+    await page.locator("#product-editor > summary").click();
     await page.getByLabel("What does it do?").fill("A correction to the AI's understanding");
     await page.getByRole("button", { name: "Save changes", exact: true }).click();
     await page.locator("#status").filter({ hasText: "Product updated" }).waitFor();

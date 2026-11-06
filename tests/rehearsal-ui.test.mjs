@@ -22,7 +22,10 @@ test('the primary panel prepares costs with AI, preserves owner corrections, run
     await page.locator('.step[data-step="1"]').click();
     assert.equal(await page.locator('#launch-form').isVisible(), false);
     await page.getByLabel('Reel script, ad concept or optional launch idea').fill('Show a saved route in the opening second.');
-    await page.getByRole('button', { name: 'Let AI prepare my virtual launch', exact: true }).click();
+    await page.getByRole('button', { name: 'Build my launch plan', exact: true }).click();
+    await page.locator('#virtual-plan-preview').getByRole('heading', { name: 'Route product launch' }).waitFor({ timeout: 15_000 });
+    assert.equal(await page.getByLabel('AI proposed launch budget').isVisible(), false);
+    await page.locator('#virtual-plan-editor > summary').click();
     await page.getByLabel('AI proposed launch budget').waitFor({ timeout: 15_000 });
     assert.equal(await page.getByLabel('AI proposed launch budget').inputValue(), '1500');
     await page.getByLabel('AI proposed launch budget').fill('2200');
@@ -30,10 +33,15 @@ test('the primary panel prepares costs with AI, preserves owner corrections, run
     await page.getByRole('button', { name: 'Save plan corrections', exact: true }).click();
     await page.locator('#virtual-message').filter({ hasText: 'corrections saved' }).waitFor();
     assert.equal((await readRehearsal(root)).plan.proposedBudget, 2200);
-    await page.getByRole('button', { name: 'Start / resume AI audience', exact: true }).click();
-    await page.locator('#virtual-run-status').filter({ hasText: /^COMPLETED/ }).waitFor({ timeout: 15_000 });
+    await page.getByRole('button', { name: 'Start 20-person pilot', exact: true }).click();
+    await page.locator('#virtual-run-status[data-status="completed"]').waitFor({ timeout: 15_000 }).catch(async error => {
+      const saved = await readRehearsal(root);
+      console.log(JSON.stringify({ savedStatus: saved.status, savedMessage: saved.message, evaluated: saved.audience.evaluated, message: await page.locator('#virtual-message').textContent(), status: await page.locator('#virtual-run-status').textContent(), errors }));
+      throw error;
+    });
     assert.equal((await readRehearsal(root)).audience.evaluated, 20);
-    await page.getByRole('button', { name: 'Inspect individual decisions', exact: true }).click();
+    await page.locator('#virtual-decisions > summary').click();
+    await page.getByRole('button', { name: 'Show individual reactions', exact: true }).click();
     await page.locator('#virtual-records').getByText(/v000001/).waitFor();
     assert.equal(await page.locator('#virtual-records .subcard').count(), 10);
     await page.locator('.step[data-step="3"]').click();

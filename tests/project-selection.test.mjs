@@ -17,7 +17,7 @@ test("standalone Hypothra selects and initializes separate project folders from 
   try {
     const page = await browser.newPage();
     await page.goto(dashboard.url);
-    await page.locator("#folder-current").filter({ hasText: "No project selected" }).waitFor();
+    await page.locator("#folder-controls").waitFor();
     assert.equal(await page.locator(".steps").isVisible(), false);
     await page.getByRole("button", { name: "Browse folders…", exact: true }).click();
     await page.getByRole("dialog", { name: "Choose your project folder" }).waitFor();
@@ -31,6 +31,8 @@ test("standalone Hypothra selects and initializes separate project folders from 
     assert.equal(await page.locator(".steps").isVisible(), true);
     assert.match(await readFile(join(first, ".hypothra", "inspection.json"), "utf8"), /React/);
     assert.equal(await page.getByLabel("Product name", { exact: true }).inputValue(), "First app");
+    await page.getByRole("button", { name: "Change folder", exact: true }).click();
+    await page.locator("#folder-manual > summary").click();
     await page.getByLabel("Project folder", { exact: true }).fill(second);
     await page.getByRole("button", { name: "Open & analyze project", exact: true }).click();
     await page.locator("#folder-current").filter({ hasText: second }).waitFor();

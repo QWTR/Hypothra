@@ -37,6 +37,8 @@ browser test. CI installs browser dependencies and runs Windows/Linux on Node 22
 | AI rehearsal | Exact individual records, impossible/duplicate IDs rejected, 100,000-person target with partial-count honesty, request caps, pause/resume, single-worker lease, crash recovery, immutable started plans and source revisions |
 | AI browser visitors | Real Chromium fills and clicks a synthetic signup form, records actual HTTP 500 separately from opinion, rejects invented selectors and requires a local synthetic-data opt-in |
 | AI launch panel | Real HTTP/browser flow from optional creative to AI-filled costs, owner correction, individual audience records, evidence-linked recommendations and mobile layout |
+| Workspace feedback | Real pending requests and controlled model gates: immediate button state, navigation during work, truthful indeterminate/count progress, reduced motion and preserved edits after errors |
+| Windows artifact updates | Transient reader/antivirus rename locks are retried while the last complete file remains readable; permanent write failures still surface |
 | Separate project selection | A standalone panel browses/opens two external folders, initializes their own state, and rejects stale cross-project writes |
 | Public ad prices | Publisher-specific period/metric parsing, global scope, no credentials, currency conversion, and closed failure on unverifiable data |
 | Model adapter | Mocked compatible endpoint, explicit upload gate, evidence and hypothesis checks |

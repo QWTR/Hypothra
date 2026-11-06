@@ -10,7 +10,8 @@ import type { Infer } from "./inference.js";
 const unsafeControl = /pay|purchase|buy|checkout|subscrib|donat|delet|remov|destroy|publish|send|invit|transfer|withdraw|upload|admin|płat|kup|usuń|wyślij|opublikuj/iu;
 
 /** A real, bounded browser visit. Opinions are AI hypotheses; actions/errors are observations. */
-export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectModel, baseUrl: string, infer: Infer, runId: string): Promise<Experience> {
+export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectModel, baseUrl: string, infer: Infer, runId: string,
+  onActivity?: (label: string, kind: "browser" | "thinking" | "saved") => Promise<void>): Promise<Experience> {
   const target = validateLocalTarget(baseUrl);
   if (!viewer.install) throw new Error("Only individually evaluated installers can enter the app stage.");
   const browser = await chromium.launch({ headless: true });
@@ -38,6 +39,7 @@ export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectMod
     page.on("dialog", dialog => { void dialog.dismiss(); });
     page.on("pageerror", error => recordError("Browser error fingerprint: " + createHash("sha256").update(error.message).digest("hex").slice(0, 12)));
     page.on("response", response => { if (response.status() >= 400) recordError(`Observed HTTP ${response.status()} (${response.request().resourceType()})`); });
+    await onActivity?.("Opening the local test app", "browser");
     try { const response = await page.goto(target.href, { waitUntil: "domcontentloaded" }); if (response && response.status() >= 400) report.outcome = "blocked"; }
     catch { report.outcome = "blocked"; report.feedback = "The selected local page could not be loaded. This is a browser observation."; recordError("Initial navigation failed"); return experienceSchema.parse(report); }
     for (let step = 0; step < 8; step++) {
@@ -55,6 +57,7 @@ export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectMod
       const observationId = `s${step + 1}`;
       report.observations.push({ id: observationId, pagePath: new URL(page.url()).pathname.slice(0, 180),
         visibleText: redact(observation.visibleText), controls: observation.controls.map(item => ({ ...item, label: redact(item.label) })) });
+      await onActivity?.(`Reading the actual page and choosing action ${step + 1}`, "thinking");
       const decision = (await infer(browserDecisionSchema,
         "Act as this specific synthetic installer trying to satisfy their expectation. Choose ONE next action using ONLY selectors in the current observation. You may inspect, click, fill a dummy input or finish with satisfied/dropout. For fill choose email/name/password/search; the host supplies synthetic values. Never request real payments, outgoing messages, uploads, admin or destructive actions. Do not invent missing users, content or errors. Distinguish your personal opinion from observed page facts. Reference only observation IDs actually supplied. A confusing/empty experience may motivate dropout; that opinion is not a proven defect. Finish when your goal is met or you would leave. No arbitrary navigation or scripts.",
         { project: model.project, viewer, currentObservation: report.observations.at(-1), previousObservations: report.observations.slice(-3, -1), previousActions: report.actions, runtimeErrors: report.runtimeErrors })).value;
@@ -73,6 +76,7 @@ export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectMod
         report.outcome = "blocked"; report.feedback = "The proposed action was blocked by the test boundary; this is not evidence of an application bug."; break;
       }
       try {
+        await onActivity?.(`${decision.action === "click" ? "Clicking" : "Filling"} “${control.label.slice(0, 80)}”`, "browser");
         if (decision.action === "click") {
           if (!["a", "button", "input", "div", "span"].includes(control.tag)) throw new Error("Control cannot be clicked");
           await page.locator(decision.selector).click();
@@ -83,6 +87,7 @@ export async function exploreAsViewer(viewer: SyntheticViewer, model: ProjectMod
           await page.locator(decision.selector).fill(values[decision.inputKind]);
         }
         action.result = "performed";
+        await onActivity?.(`${decision.action === "click" ? "Clicked" : "Filled"} “${control.label.slice(0, 80)}”`, "saved");
         await page.waitForLoadState("domcontentloaded").catch(() => {});
       } catch { action.result = "failed"; report.outcome = "blocked"; recordError(`Observed ${decision.action} failure at ${observationId}`); break; }
     }

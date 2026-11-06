@@ -33,6 +33,15 @@ Code, comments, UI, and documentation are English.
 
 ## Normal edit/test loop
 
+The workspace theme, responsive layout and animations live in
+`packages/product-lab/src/dashboard-style.ts`; its color variables are at the top.
+`dashboard-ui.ts` provides shared button feedback, navigation, connection state
+and confirmations. `dashboard-view.ts` defines the page shell and compact product
+brief. `rehearsal-view.ts` defines the campaign, app and results steps. Keep progress
+labels tied to the saved `planningStep`, `activity`, completed counts and job phase;
+do not advance progress on a timer. `dashboard-feedback.test.mjs` holds model work
+pending to verify that distinction and the reduced-motion/error states.
+
 The AI-first launch engine lives in `rehearsal.ts`: job phases, exact accounting,
 pause/resume, crash recovery and artifacts. `rehearsal-schema.ts` defines the plan,
 individual decisions and result contracts. Change prompts there to change audience

@@ -9,7 +9,7 @@ the owner to invent CTR, install rates or activation percentages.
    confirm the exact product version.
 2. Open **Launch plan**. Optionally describe a reel, advertisement or launch idea
    and constraints such as a maximum budget. Leave them empty for an AI proposal.
-3. Start with the **20-person pilot** and choose **Let AI prepare my virtual launch**.
+3. Start with the **20-person pilot** and choose **Build my launch plan**.
    AI proposes audience segments, their motivations, a script/hook/CTA, other costs
    and a budget. Public Meta/TikTok CPM references are researched automatically;
    advertising accounts and their API keys are not required.
@@ -24,6 +24,15 @@ the owner to invent CTR, install rates or activation percentages.
    Confirm the app has no production services, then start AI exploration.
 7. Open **Your results** for evidence-linked marketing and product recommendations.
    Compare saved runs after changing the creative or product.
+
+The panel shows a compact brief and a single next action. **Edit project details**
+and **Edit the proposed plan** expand the full editors. Costs, source evidence,
+individual reactions and engine usage are secondary disclosures rather than
+required setup screens. The sidebar remains usable during requests. Buttons show
+their own pending state; real saved activity reports price research, model work,
+batch saves and performed browser actions. Unknown-duration model work stays
+indeterminate. Percentages come only from completed people or visits. Motion
+respects the operating system's reduced-motion preference.
 
 ## What actually runs
 

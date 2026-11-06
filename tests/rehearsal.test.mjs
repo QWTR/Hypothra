@@ -143,6 +143,8 @@ test('interested AI users perform real browser actions and retain actual HTTP fa
     assert.match(received[0], /@example\.invalid/);
     assert.ok(result.experience.samples[0].actions.every(action => action.result === 'performed'));
     assert.match(result.experience.samples[0].runtimeErrors.join(' '), /HTTP 500/);
+    assert.ok(result.activity.some(event => event.kind === 'saved' && /Clicked/.test(event.label)));
+    assert.ok(result.activity.every(event => Number.isFinite(Date.parse(event.at))));
     assert.doesNotMatch(JSON.stringify(result.experience.samples[0].observations), /private-input-sentinel/);
   } finally { await new Promise(resolve => server.close(resolve)); }
 }));
